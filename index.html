@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GIT :: ZERO TO HERO — Interactive Field Manual</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=VT323&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#050805;
@@ -19,55 +19,55 @@
   --blue:#5fc9ff;
   --ink:#c9ffd9;
   --ink-dim:#6f9c81;
-  --line:#163420;
+  --line:#1c2a22;
+  --radius:14px;
+  --radius-lg:22px;
+  --shadow-card:0 1px 0 rgba(255,255,255,0.03) inset, 0 10px 30px -12px rgba(0,0,0,0.55);
+  --shadow-lift:0 1px 0 rgba(255,255,255,0.05) inset, 0 18px 44px -14px rgba(0,0,0,0.65), 0 0 0 1px rgba(77,255,136,0.12);
   font-size:16px;
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{
   background:
-    radial-gradient(ellipse at 20% -10%, rgba(77,255,136,0.08), transparent 55%),
-    radial-gradient(ellipse at 90% 10%, rgba(95,201,255,0.05), transparent 50%),
+    radial-gradient(ellipse 900px 500px at 15% -5%, rgba(77,255,136,0.10), transparent 60%),
+    radial-gradient(ellipse 900px 500px at 100% 0%, rgba(95,201,255,0.07), transparent 55%),
+    radial-gradient(ellipse 700px 500px at 50% 100%, rgba(255,181,69,0.05), transparent 60%),
     var(--bg);
+  background-attachment:fixed;
   color:var(--ink);
   font-family:'Space Mono', monospace;
-  line-height:1.55;
+  line-height:1.6;
   overflow-x:hidden;
-  cursor: default;
   min-height:100vh;
+  -webkit-font-smoothing:antialiased;
 }
 
-/* scanlines + grain overlay */
+/* faint grain only — no scanlines, keeps it modern not CRT */
 body::before{
   content:"";
   position:fixed; inset:0;
   pointer-events:none;
   z-index:9999;
-  background:repeating-linear-gradient(
-    to bottom,
-    rgba(0,0,0,0) 0px,
-    rgba(0,0,0,0) 2px,
-    rgba(0,0,0,0.18) 3px,
-    rgba(0,0,0,0) 4px
-  );
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  opacity:0.35;
   mix-blend-mode:overlay;
-  opacity:0.5;
 }
 body::after{
   content:"";
   position:fixed; inset:0;
   pointer-events:none;
   z-index:9998;
-  box-shadow: inset 0 0 180px rgba(0,0,0,0.85);
+  box-shadow: inset 0 0 220px rgba(0,0,0,0.5);
 }
 
 ::selection{ background:var(--phosphor); color:#03170a; }
 
 /* ---------- Typography ---------- */
-h1,h2,h3,h4{ font-family:'VT323', monospace; font-weight:400; letter-spacing:0.02em; color:var(--phosphor-bright); text-shadow:0 0 12px rgba(77,255,136,0.35); margin:0; }
-h1{ font-size:clamp(3rem, 9vw, 7rem); line-height:0.95; }
-h2{ font-size:clamp(2rem, 5vw, 3.2rem); }
-h3{ font-size:1.7rem; color:var(--amber); text-shadow:0 0 10px rgba(255,181,69,0.3); }
+h1,h2,h3,h4{ font-family:'Bricolage Grotesque', sans-serif; font-weight:700; letter-spacing:-0.02em; color:var(--phosphor-bright); margin:0; }
+h1{ font-size:clamp(2.8rem, 8vw, 6.4rem); line-height:1.02; text-shadow:0 0 40px rgba(77,255,136,0.25); }
+h2{ font-size:clamp(1.9rem, 4.4vw, 2.9rem); text-shadow:0 0 24px rgba(77,255,136,0.15); }
+h3{ font-size:1.5rem; font-weight:700; color:var(--amber); text-shadow:none; }
 p{ margin:0 0 0.8em; }
 code, .mono{ font-family:'IBM Plex Mono', monospace; }
 a{ color:var(--blue); }
@@ -98,11 +98,17 @@ a{ color:var(--blue); }
 }
 .boot-log{
   font-family:'IBM Plex Mono', monospace;
-  font-size:0.78rem;
+  font-size:0.76rem;
   color:var(--phosphor-dim);
   white-space:pre-wrap;
   min-height:7.4em;
-  margin-bottom:1.4rem;
+  margin-bottom:1.6rem;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,0.015);
+  border-radius:var(--radius);
+  padding:1rem 1.2rem;
+  max-width:520px;
+  box-shadow:var(--shadow-card);
 }
 .boot-log .ok{ color:var(--phosphor); }
 .cursor-blink{
@@ -121,7 +127,11 @@ a{ color:var(--blue); }
   display:flex; gap:0.6rem; flex-wrap:wrap;
   font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--ink-dim);
 }
-.tagline span{ border:1px solid var(--line); padding:0.3rem 0.7rem; border-radius:2px; }
+.tagline span{
+  border:1px solid var(--line); background:rgba(255,255,255,0.02); padding:0.35rem 0.85rem; border-radius:100px;
+  transition:border-color .2s ease; box-shadow:var(--shadow-card);
+}
+.tagline span:hover{ border-color:var(--phosphor-dim); color:var(--ink); }
 
 .scroll-hint{
   position:absolute; bottom:2.2rem; left:50%; transform:translateX(-50%);
@@ -149,41 +159,43 @@ a{ color:var(--blue); }
 }
 .room-stop:last-child::after{ content:""; }
 .room-node{
-  width:46px; height:46px; border-radius:50%; border:1px solid var(--phosphor-dim);
-  display:flex; align-items:center; justify-content:center; font-family:'VT323',monospace; font-size:1.3rem;
-  color:var(--phosphor); background:var(--panel); transition:all .2s ease; margin-bottom:0.7rem;
+  width:48px; height:48px; border-radius:16px; border:1px solid var(--line);
+  display:flex; align-items:center; justify-content:center; font-size:1.4rem;
+  color:var(--phosphor); background:linear-gradient(160deg, var(--panel), #08110a); transition:all .25s cubic-bezier(.2,.8,.3,1); margin-bottom:0.7rem;
+  box-shadow:var(--shadow-card);
 }
-.room-stop:hover .room-node{ border-color:var(--phosphor); box-shadow:0 0 16px rgba(77,255,136,0.45); transform:scale(1.08); }
-.room-name{ font-family:'IBM Plex Mono',monospace; font-size:0.72rem; letter-spacing:0.05em; color:var(--amber); margin-bottom:0.3rem; }
-.room-story{ font-size:0.72rem; color:var(--ink-dim); line-height:1.4; padding-right:0.4rem; }
+.room-stop:hover .room-node{ border-color:var(--phosphor); box-shadow:var(--shadow-lift); transform:translateY(-3px) scale(1.05); }
+.room-name{ font-family:'IBM Plex Mono',monospace; font-size:0.72rem; letter-spacing:0.05em; color:var(--amber); margin-bottom:0.3rem; font-weight:600; }
+.room-story{ font-size:0.72rem; color:var(--ink-dim); line-height:1.45; padding-right:0.4rem; }
 .room-tag{
   display:inline-block; margin-top:2.4rem; margin-bottom:0.5rem;
-  font-family:'IBM Plex Mono',monospace; font-size:0.68rem; letter-spacing:0.2em; text-transform:uppercase;
-  color:var(--blue); border:1px solid var(--blue); border-radius:2px; padding:0.2rem 0.55rem; opacity:0.85;
+  font-family:'IBM Plex Mono',monospace; font-size:0.68rem; letter-spacing:0.18em; text-transform:uppercase;
+  color:var(--blue); border:1px solid rgba(95,201,255,0.4); background:rgba(95,201,255,0.06);
+  border-radius:100px; padding:0.28rem 0.75rem; opacity:0.9;
 }
 
 /* ---------- Nav rail ---------- */
 .railwrap{
   position:sticky; top:0; z-index:50;
-  backdrop-filter: blur(10px);
-  background:rgba(5,8,5,0.86);
+  backdrop-filter: blur(16px) saturate(1.4);
+  background:rgba(5,8,6,0.72);
   border-bottom:1px solid var(--line);
 }
 .rail{
-  display:flex; gap:0.35rem; overflow-x:auto; padding:0.85rem clamp(1.2rem,4vw,3rem);
+  display:flex; gap:0.4rem; overflow-x:auto; padding:0.85rem clamp(1.2rem,4vw,3rem);
   scrollbar-width:thin;
 }
 .rail::-webkit-scrollbar{ height:5px; }
 .rail::-webkit-scrollbar-thumb{ background:var(--phosphor-dim); }
 .rail button{
   flex:0 0 auto;
-  background:transparent; border:1px solid var(--line); color:var(--ink-dim);
-  font-family:'IBM Plex Mono',monospace; font-size:0.72rem; letter-spacing:0.05em;
-  padding:0.5rem 0.85rem; border-radius:2px; cursor:pointer;
+  background:rgba(255,255,255,0.02); border:1px solid var(--line); color:var(--ink-dim);
+  font-family:'IBM Plex Mono',monospace; font-size:0.72rem; letter-spacing:0.03em;
+  padding:0.5rem 0.9rem; border-radius:100px; cursor:pointer;
   transition:all .2s ease;
 }
-.rail button:hover{ border-color:var(--phosphor-dim); color:var(--ink); }
-.rail button.active{ background:var(--phosphor); color:#03170a; border-color:var(--phosphor); font-weight:700; }
+.rail button:hover{ border-color:var(--phosphor-dim); color:var(--ink); transform:translateY(-1px); }
+.rail button.active{ background:var(--phosphor); color:#03170a; border-color:var(--phosphor); font-weight:700; box-shadow:0 4px 16px -4px rgba(77,255,136,0.5); }
 
 /* ---------- Phase section ---------- */
 .phase{
@@ -195,20 +207,21 @@ a{ color:var(--blue); }
   display:flex; align-items:baseline; gap:1rem; margin-bottom:0.6rem; flex-wrap:wrap;
 }
 .phase-num{
-  font-family:'VT323',monospace; font-size:1.1rem; color:var(--phosphor-dim);
-  border:1px solid var(--phosphor-dim); padding:0.15rem 0.6rem; border-radius:2px;
+  font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:0.78rem; color:var(--phosphor-dim);
+  border:1px solid var(--line); background:rgba(255,255,255,0.02); padding:0.25rem 0.7rem; border-radius:100px; letter-spacing:0.08em;
 }
 .phase-desc{ max-width:680px; color:var(--ink-dim); margin-bottom:2.4rem; }
 .phase-desc b{ color:var(--phosphor); font-weight:600; }
 
 /* analogy card */
 .analogy{
-  border:1px dashed var(--phosphor-dim);
-  background:rgba(77,255,136,0.04);
-  padding:1.1rem 1.3rem;
-  border-radius:4px;
+  border:1px solid var(--line);
+  background:linear-gradient(160deg, rgba(77,255,136,0.05), rgba(77,255,136,0.015));
+  padding:1.2rem 1.4rem;
+  border-radius:var(--radius);
   margin-bottom:2.4rem;
   max-width:760px;
+  box-shadow:var(--shadow-card);
 }
 .analogy .eyebrow{ margin-bottom:0.35rem; display:block; }
 
@@ -219,28 +232,28 @@ a{ color:var(--blue); }
 @media (max-width: 880px){ .stage{ grid-template-columns:1fr; } }
 
 .viz-box{
-  background:linear-gradient(180deg, var(--panel), #08110a);
+  background:linear-gradient(165deg, var(--panel), #08110a);
   border:1px solid var(--line);
-  border-radius:8px;
-  padding:1.6rem;
+  border-radius:var(--radius-lg);
+  padding:1.7rem;
   position:relative;
   min-height:280px;
-  box-shadow:0 0 40px rgba(0,0,0,0.4), inset 0 0 60px rgba(77,255,136,0.03);
+  box-shadow:var(--shadow-card);
 }
 .viz-controls{
   display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1.2rem;
 }
 .btn{
   font-family:'IBM Plex Mono',monospace; font-size:0.72rem;
-  background:transparent; border:1px solid var(--phosphor-dim); color:var(--phosphor);
-  padding:0.45rem 0.8rem; border-radius:3px; cursor:pointer; letter-spacing:0.03em;
-  transition:all .15s ease;
+  background:rgba(255,255,255,0.02); border:1px solid var(--phosphor-dim); color:var(--phosphor);
+  padding:0.5rem 0.9rem; border-radius:100px; cursor:pointer; letter-spacing:0.02em;
+  transition:all .18s cubic-bezier(.2,.8,.3,1);
 }
-.btn:hover{ background:var(--phosphor); color:#03170a; box-shadow:0 0 14px rgba(77,255,136,0.5); }
+.btn:hover{ background:var(--phosphor); color:#03170a; box-shadow:0 6px 20px -6px rgba(77,255,136,0.6); transform:translateY(-1px); }
 .btn.alt{ border-color:var(--amber); color:var(--amber); }
-.btn.alt:hover{ background:var(--amber); color:#241200; box-shadow:0 0 14px rgba(255,181,69,0.5); }
+.btn.alt:hover{ background:var(--amber); color:#241200; box-shadow:0 6px 20px -6px rgba(255,181,69,0.6); }
 .btn.danger{ border-color:var(--red); color:var(--red); }
-.btn.danger:hover{ background:var(--red); color:#2a0000; box-shadow:0 0 14px rgba(255,95,86,0.5); }
+.btn.danger:hover{ background:var(--red); color:#2a0000; box-shadow:0 6px 20px -6px rgba(255,95,86,0.6); }
 
 .viz-caption{
   margin-top:0.9rem; font-size:0.78rem; color:var(--ink-dim); min-height:1.4em;
@@ -250,14 +263,14 @@ a{ color:var(--blue); }
 /* command cards */
 .cmdlist{ display:flex; flex-direction:column; gap:0.7rem; }
 .cmd-card{
-  border:1px solid var(--line); border-radius:6px; padding:0.85rem 1rem;
+  border:1px solid var(--line); border-radius:var(--radius); padding:0.9rem 1.1rem;
   background:rgba(255,255,255,0.015);
-  transition:border-color .2s ease, transform .2s ease;
+  transition:border-color .2s ease, transform .2s ease, box-shadow .2s ease;
 }
-.cmd-card:hover{ border-color:var(--phosphor-dim); transform:translateX(3px); }
+.cmd-card:hover{ border-color:var(--phosphor-dim); transform:translateX(4px); box-shadow:var(--shadow-card); }
 .cmd-card code.cmd{
   display:inline-block; color:var(--amber); font-size:0.86rem; font-weight:600;
-  background:rgba(255,181,69,0.08); padding:0.15rem 0.45rem; border-radius:3px; margin-bottom:0.4rem;
+  background:rgba(255,181,69,0.1); padding:0.2rem 0.55rem; border-radius:6px; margin-bottom:0.45rem;
 }
 .cmd-card .scenario{ font-size:0.82rem; color:var(--ink-dim); }
 .cmd-card .scenario b{ color:var(--ink); }
@@ -278,23 +291,23 @@ svg text{ font-family:'IBM Plex Mono',monospace; }
 }
 .refgrid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:0.6rem; }
 .ref-card{
-  border:1px solid var(--line); border-radius:6px; padding:0.7rem 0.85rem;
+  border:1px solid var(--line); border-radius:var(--radius); padding:0.75rem 0.9rem;
   background:rgba(255,255,255,0.015); cursor:pointer; text-align:left;
   font-family:'Space Mono',monospace; color:var(--ink-dim); font-size:0.78rem;
-  transition:border-color .18s ease, transform .18s ease, background .18s ease;
+  transition:border-color .18s ease, transform .18s ease, background .18s ease, box-shadow .18s ease;
 }
-.ref-card:hover{ border-color:var(--phosphor); transform:translateY(-2px); background:rgba(77,255,136,0.05); }
+.ref-card:hover{ border-color:var(--phosphor); transform:translateY(-3px); background:rgba(77,255,136,0.05); box-shadow:var(--shadow-card); }
 .ref-card.firing{ border-color:var(--phosphor-bright); animation:shakeX .3s ease; }
 .ref-card code.cmd{
   display:block; color:var(--amber); font-size:0.85rem; font-weight:600;
-  background:rgba(255,181,69,0.08); padding:0.15rem 0.45rem; border-radius:3px; margin-bottom:0.4rem;
+  background:rgba(255,181,69,0.1); padding:0.2rem 0.55rem; border-radius:6px; margin-bottom:0.45rem;
   font-family:'IBM Plex Mono',monospace;
 }
 
 .terminal{
-  background:#020903; border:1px solid var(--phosphor-dim); border-radius:8px;
-  padding:1.1rem 1.2rem; font-family:'IBM Plex Mono',monospace; font-size:0.82rem;
-  min-height:120px; position:relative; overflow:hidden; box-shadow:0 0 50px rgba(77,255,136,0.06), inset 0 0 40px rgba(0,0,0,0.6);
+  background:#020903; border:1px solid var(--phosphor-dim); border-radius:var(--radius-lg);
+  padding:1.2rem 1.3rem; font-family:'IBM Plex Mono',monospace; font-size:0.82rem;
+  min-height:120px; position:relative; overflow:hidden; box-shadow:var(--shadow-lift);
 }
 .terminal::before{
   content:""; position:absolute; inset:0; pointer-events:none; opacity:0;
@@ -314,15 +327,17 @@ footer{
   display:flex; justify-content:space-between; flex-wrap:wrap; gap:1rem;
 }
 footer .glow{ color:var(--phosphor); }
+footer code{ background:rgba(255,255,255,0.05); padding:0.1rem 0.4rem; border-radius:4px; }
 
 /* checklist */
 .checklist{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:0.6rem; margin-top:1rem; }
 .check-item{
   display:flex; align-items:center; gap:0.6rem;
-  border:1px solid var(--line); border-radius:4px; padding:0.6rem 0.8rem;
-  cursor:pointer; user-select:none; font-size:0.8rem;
+  border:1px solid var(--line); border-radius:var(--radius); padding:0.65rem 0.9rem;
+  cursor:pointer; user-select:none; font-size:0.8rem; transition:border-color .18s ease, transform .18s ease;
 }
-.check-item .box{ width:14px; height:14px; border:1px solid var(--phosphor-dim); border-radius:2px; flex:0 0 auto; position:relative; }
+.check-item:hover{ border-color:var(--phosphor-dim); transform:translateY(-2px); }
+.check-item .box{ width:14px; height:14px; border:1px solid var(--phosphor-dim); border-radius:5px; flex:0 0 auto; position:relative; }
 .check-item.done .box{ background:var(--phosphor); box-shadow:0 0 8px var(--phosphor); }
 .check-item.done{ color:var(--phosphor); text-decoration:line-through; text-decoration-color:var(--phosphor-dim); }
 
