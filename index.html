@@ -317,6 +317,14 @@ footer .glow{ color:var(--phosphor); }
 @keyframes typeCursorBlink{ 50%{ opacity:0; } }
 @keyframes scanFlash{ 0%{ opacity:0.55; } 100%{ opacity:0; } }
 @keyframes shakeX{ 0%,100%{ transform:translateX(0); } 20%{ transform:translateX(-4px); } 40%{ transform:translateX(4px); } 60%{ transform:translateX(-3px); } 80%{ transform:translateX(3px); } }
+@keyframes gearSpin{ to{ transform:rotate(360deg); } }
+@keyframes flyAcross{ 0%{ transform:translateX(-60px); opacity:0; } 20%{ opacity:1; } 80%{ opacity:1; } 100%{ transform:translateX(60px); opacity:0; } }
+@keyframes sweepOff{ 0%{ transform:translateX(0); opacity:1; } 100%{ transform:translateX(70px); opacity:0; } }
+@keyframes slideRename{ 0%{ transform:translateX(-40px); opacity:0; } 40%{ opacity:1; } 100%{ transform:translateX(0); opacity:1; } }
+@keyframes hunkStrike{ 0%{ opacity:0; } 100%{ opacity:1; } }
+@keyframes cloudPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.12); } }
+@keyframes hexFlicker{ 0%,100%{ opacity:1; } 50%{ opacity:0.35; } }
+@keyframes reorderSwap{ 0%{ transform:translateY(0); } 50%{ transform:translateY(-16px); } 100%{ transform:translateY(0); } }
 </style>
 </head>
 <body>
@@ -703,9 +711,14 @@ refSec.id = 'p12';
 refSec.innerHTML = `
   <div class="phase-head"><span class="phase-num">PHASE 12</span><h2>Plumbing & Power-User Reference</h2></div>
   <p class="phase-desc">Every command left in git's toolbox. Not daily-driver material — this is the reference wall you bookmark and come back to. <b>Click any card to run it in the terminal.</b></p>
-  <div class="terminal" id="p12-terminal">
-    <span class="prompt">$</span> <span class="tcursor"></span>
-    <div class="out" id="p12-out">Click a command card below — it runs right here.</div>
+  <div class="stage" style="align-items:stretch;">
+    <div class="terminal" id="p12-terminal">
+      <span class="prompt">$</span> <span class="tcursor"></span>
+      <div class="out" id="p12-out">Click a command card below — it runs right here.</div>
+    </div>
+    <div class="viz-box" id="p12-icon" style="min-height:auto; display:flex; align-items:center; justify-content:center;">
+      <svg viewBox="0 0 160 160" width="140" height="140" id="p12-icon-svg"></svg>
+    </div>
   </div>
   <div style="height:1.6rem;"></div>
   <div id="p12-cats"></div>
@@ -719,24 +732,80 @@ railBtn12.onclick = ()=>refSec.scrollIntoView({behavior:'smooth', block:'start'}
 rail.appendChild(railBtn12);
 
 const catsEl = refSec.querySelector('#p12-cats');
-REFCATS.forEach(cat=>{
+REFCATS.forEach((cat,ci)=>{
   const block = document.createElement('div');
   block.className = 'refcat';
   block.innerHTML = `<h4>${cat.name}</h4><div class="refgrid">${
-    cat.items.map((it,i)=>`<button class="ref-card" data-cmd="${it[0].replace(/"/g,'&quot;')}" data-sc="${it[1].replace(/"/g,'&quot;')}"><code class="cmd">${it[0]}</code>${it[1]}</button>`).join('')
+    cat.items.map((it,i)=>`<button class="ref-card" data-cat="${ci}" data-cmd="${it[0].replace(/"/g,'&quot;')}" data-sc="${it[1].replace(/"/g,'&quot;')}"><code class="cmd">${it[0]}</code>${it[1]}</button>`).join('')
   }</div>`;
   catsEl.appendChild(block);
 });
 
 const termOut = document.getElementById('p12-out');
 const termBox = document.getElementById('p12-terminal');
+const iconSvg = document.getElementById('p12-icon-svg');
 let termTyping = false;
+
+/* One distinct motion style per category — every command in that category plays its category's animation on click */
+const ICON_PLAYERS = [
+  /* 0 File & Working Tree — file box slides in and relabels */
+  ()=>{ iconSvg.innerHTML = `
+    <rect x="45" y="55" width="70" height="50" rx="6" fill="none" stroke="#4dff88" stroke-width="2" style="animation:slideRename .5s ease"/>
+    <text x="80" y="85" text-anchor="middle" font-size="11" fill="#4dff88" style="animation:slideRename .5s ease">file.txt</text>
+    <path d="M20 80 H45" stroke="#163420" stroke-width="2" marker-end="url(#pa)"/>
+    <defs><marker id="pa" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#163420"/></marker></defs>`; },
+  /* 1 History Rewriting — commits hop and re-park in new order */
+  ()=>{ iconSvg.innerHTML = `
+    <line x1="20" y1="90" x2="140" y2="90" stroke="#163420" stroke-width="2"/>
+    <circle cx="45" cy="90" r="12" fill="#0c140d" stroke="#4dff88" stroke-width="2" style="animation:reorderSwap .6s ease"/>
+    <circle cx="80" cy="90" r="12" fill="#0c140d" stroke="#ffb545" stroke-width="2" style="animation:reorderSwap .6s ease .1s both"/>
+    <circle cx="115" cy="90" r="12" fill="#0c140d" stroke="#a6ffce" stroke-width="3" style="animation:reorderSwap .6s ease .2s both, pulseGreen 1.2s ease infinite"/>`; },
+  /* 2 Staging & Diff — a hunk gets isolated: + green / - red split */
+  ()=>{ iconSvg.innerHTML = `
+    <rect x="25" y="45" width="110" height="20" rx="3" fill="rgba(255,95,86,0.12)" stroke="#ff5f56" style="animation:hunkStrike .4s ease"/>
+    <text x="35" y="59" font-size="10" fill="#ff5f56" style="animation:hunkStrike .4s ease">- old line</text>
+    <rect x="25" y="95" width="110" height="20" rx="3" fill="rgba(77,255,136,0.12)" stroke="#4dff88" style="animation:hunkStrike .4s ease .25s both"/>
+    <text x="35" y="109" font-size="10" fill="#4dff88" style="animation:hunkStrike .4s ease .25s both">+ new line</text>`; },
+  /* 3 Branch & Remote — branch node pulses, arrow leaps to cloud */
+  ()=>{ iconSvg.innerHTML = `
+    <circle cx="40" cy="90" r="12" fill="#0c140d" stroke="#5fc9ff" stroke-width="2" style="animation:pulseGreen 1s ease infinite"/>
+    <path d="M55 88 H105" stroke="#5fc9ff" stroke-width="2" stroke-dasharray="5 4" style="animation:dashFlow .8s linear infinite"/>
+    <ellipse cx="128" cy="88" rx="26" ry="18" fill="none" stroke="#a6ffce" stroke-width="2" style="animation:cloudPulse 1s ease infinite"/>`; },
+  /* 4 Inspection & Plumbing — raw hex/hash flicker */
+  ()=>{ iconSvg.innerHTML = `
+    <text x="80" y="70" text-anchor="middle" font-size="13" fill="#ffb545" style="animation:hexFlicker .5s steps(2) infinite">a1b2c3d</text>
+    <text x="80" y="95" text-anchor="middle" font-size="13" fill="#5fc9ff" style="animation:hexFlicker .5s steps(2) infinite .1s">9f8e7d6</text>
+    <text x="80" y="120" text-anchor="middle" font-size="13" fill="#4dff88" style="animation:hexFlicker .5s steps(2) infinite .2s">44a09be</text>`; },
+  /* 5 Config & Environment — gear spins */
+  ()=>{ iconSvg.innerHTML = `
+    <g style="transform-origin:80px 85px; animation:gearSpin 1.1s linear infinite;">
+      <circle cx="80" cy="85" r="26" fill="none" stroke="#ffb545" stroke-width="3"/>
+      ${[0,45,90,135,180,225,270,315].map(a=>`<rect x="77" y="52" width="6" height="12" fill="#ffb545" transform="rotate(${a} 80 85)"/>`).join('')}
+    </g>
+    <circle cx="80" cy="85" r="9" fill="#0c140d" stroke="#ffb545" stroke-width="2"/>`; },
+  /* 6 Collaboration Extras — envelope flies across */
+  ()=>{ iconSvg.innerHTML = `
+    <line x1="15" y1="85" x2="145" y2="85" stroke="#163420" stroke-dasharray="4 4"/>
+    <g style="animation:flyAcross 1.1s ease-in-out;">
+      <rect x="60" y="70" width="40" height="28" rx="3" fill="#0c140d" stroke="#5fc9ff" stroke-width="2"/>
+      <path d="M60 70 L80 88 L100 70" fill="none" stroke="#5fc9ff" stroke-width="2"/>
+    </g>`; },
+  /* 7 Maintenance Extras — broom sweeps loose objects away */
+  ()=>{ iconSvg.innerHTML = `
+    <circle cx="40" cy="60" r="6" fill="#7a1a16" stroke="#ff5f56" style="animation:sweepOff .7s ease forwards"/>
+    <circle cx="55" cy="100" r="6" fill="#7a1a16" stroke="#ff5f56" style="animation:sweepOff .7s ease forwards .08s"/>
+    <circle cx="35" cy="115" r="6" fill="#7a1a16" stroke="#ff5f56" style="animation:sweepOff .7s ease forwards .16s"/>
+    <text x="80" y="145" text-anchor="middle" class="dim-label">swept clean</text>`; },
+];
+
 catsEl.addEventListener('click', (e)=>{
   const card = e.target.closest('.ref-card');
   if(!card || termTyping) return;
   termTyping = true;
   document.querySelectorAll('.ref-card.firing').forEach(c=>c.classList.remove('firing'));
   card.classList.add('firing');
+  const catIdx = parseInt(card.dataset.cat, 10);
+  (ICON_PLAYERS[catIdx] || ICON_PLAYERS[0])();
   const cmd = card.dataset.cmd, sc = card.dataset.sc;
   termOut.innerHTML = '<span class="typed"></span><span class="tcursor"></span>';
   const typedEl = termOut.querySelector('.typed');
