@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GIT :: ZERO TO HERO — Interactive Field Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050805;
+  --bg-2:#0a120a;
+  --panel:#0c140d;
+  --phosphor:#4dff88;
+  --phosphor-dim:#1e6b3d;
+  --phosphor-bright:#a6ffce;
+  --amber:#ffb545;
+  --red:#ff5f56;
+  --blue:#5fc9ff;
+  --ink:#c9ffd9;
+  --ink-dim:#6f9c81;
+  --line:#163420;
+  font-size:16px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    radial-gradient(ellipse at 20% -10%, rgba(77,255,136,0.08), transparent 55%),
+    radial-gradient(ellipse at 90% 10%, rgba(95,201,255,0.05), transparent 50%),
+    var(--bg);
+  color:var(--ink);
+  font-family:'Space Mono', monospace;
+  line-height:1.55;
+  overflow-x:hidden;
+  cursor: default;
+  min-height:100vh;
+}
+
+/* scanlines + grain overlay */
+body::before{
+  content:"";
+  position:fixed; inset:0;
+  pointer-events:none;
+  z-index:9999;
+  background:repeating-linear-gradient(
+    to bottom,
+    rgba(0,0,0,0) 0px,
+    rgba(0,0,0,0) 2px,
+    rgba(0,0,0,0.18) 3px,
+    rgba(0,0,0,0) 4px
+  );
+  mix-blend-mode:overlay;
+  opacity:0.5;
+}
+body::after{
+  content:"";
+  position:fixed; inset:0;
+  pointer-events:none;
+  z-index:9998;
+  box-shadow: inset 0 0 180px rgba(0,0,0,0.85);
+}
+
+::selection{ background:var(--phosphor); color:#03170a; }
+
+/* ---------- Typography ---------- */
+h1,h2,h3,h4{ font-family:'VT323', monospace; font-weight:400; letter-spacing:0.02em; color:var(--phosphor-bright); text-shadow:0 0 12px rgba(77,255,136,0.35); margin:0; }
+h1{ font-size:clamp(3rem, 9vw, 7rem); line-height:0.95; }
+h2{ font-size:clamp(2rem, 5vw, 3.2rem); }
+h3{ font-size:1.7rem; color:var(--amber); text-shadow:0 0 10px rgba(255,181,69,0.3); }
+p{ margin:0 0 0.8em; }
+code, .mono{ font-family:'IBM Plex Mono', monospace; }
+a{ color:var(--blue); }
+
+.eyebrow{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:0.72rem;
+  letter-spacing:0.32em;
+  text-transform:uppercase;
+  color:var(--phosphor-dim);
+}
+
+/* ---------- Layout shell ---------- */
+.crt-frame{
+  max-width:1180px;
+  margin:0 auto;
+  padding:0 clamp(1.2rem, 4vw, 3rem);
+}
+
+/* ---------- Boot / Hero ---------- */
+.hero{
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  position:relative;
+  border-bottom:1px solid var(--line);
+}
+.boot-log{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:0.78rem;
+  color:var(--phosphor-dim);
+  white-space:pre-wrap;
+  min-height:7.4em;
+  margin-bottom:1.4rem;
+}
+.boot-log .ok{ color:var(--phosphor); }
+.cursor-blink{
+  display:inline-block; width:0.6em; height:1em; background:var(--phosphor);
+  animation:blink 1s steps(1) infinite; vertical-align:-0.15em;
+}
+@keyframes blink{ 50%{ opacity:0; } }
+
+.hero h1{ opacity:0; animation:reveal 0.9s ease forwards 0.2s; }
+.hero .sub{ opacity:0; animation:reveal 0.9s ease forwards 0.5s; max-width:640px; }
+.hero .tagline{ opacity:0; animation:reveal 0.9s ease forwards 0.8s; }
+@keyframes reveal{ from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:translateY(0);} }
+
+.tagline{
+  margin-top:2rem;
+  display:flex; gap:0.6rem; flex-wrap:wrap;
+  font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:var(--ink-dim);
+}
+.tagline span{ border:1px solid var(--line); padding:0.3rem 0.7rem; border-radius:2px; }
+
+.scroll-hint{
+  position:absolute; bottom:2.2rem; left:50%; transform:translateX(-50%);
+  font-size:0.7rem; letter-spacing:0.3em; color:var(--phosphor-dim);
+  animation:bob 2s ease-in-out infinite;
+}
+@keyframes bob{ 0%,100%{transform:translate(-50%,0);} 50%{transform:translate(-50%,8px);} }
+
+/* ---------- Nav rail ---------- */
+.railwrap{
+  position:sticky; top:0; z-index:50;
+  backdrop-filter: blur(10px);
+  background:rgba(5,8,5,0.86);
+  border-bottom:1px solid var(--line);
+}
+.rail{
+  display:flex; gap:0.35rem; overflow-x:auto; padding:0.85rem clamp(1.2rem,4vw,3rem);
+  scrollbar-width:thin;
+}
+.rail::-webkit-scrollbar{ height:5px; }
+.rail::-webkit-scrollbar-thumb{ background:var(--phosphor-dim); }
+.rail button{
+  flex:0 0 auto;
+  background:transparent; border:1px solid var(--line); color:var(--ink-dim);
+  font-family:'IBM Plex Mono',monospace; font-size:0.72rem; letter-spacing:0.05em;
+  padding:0.5rem 0.85rem; border-radius:2px; cursor:pointer;
+  transition:all .2s ease;
+}
+.rail button:hover{ border-color:var(--phosphor-dim); color:var(--ink); }
+.rail button.active{ background:var(--phosphor); color:#03170a; border-color:var(--phosphor); font-weight:700; }
+
+/* ---------- Phase section ---------- */
+.phase{
+  padding:5rem 0 4rem;
+  border-bottom:1px solid var(--line);
+  scroll-margin-top:4.5rem;
+}
+.phase-head{
+  display:flex; align-items:baseline; gap:1rem; margin-bottom:0.6rem; flex-wrap:wrap;
+}
+.phase-num{
+  font-family:'VT323',monospace; font-size:1.1rem; color:var(--phosphor-dim);
+  border:1px solid var(--phosphor-dim); padding:0.15rem 0.6rem; border-radius:2px;
+}
+.phase-desc{ max-width:680px; color:var(--ink-dim); margin-bottom:2.4rem; }
+.phase-desc b{ color:var(--phosphor); font-weight:600; }
+
+/* analogy card */
+.analogy{
+  border:1px dashed var(--phosphor-dim);
+  background:rgba(77,255,136,0.04);
+  padding:1.1rem 1.3rem;
+  border-radius:4px;
+  margin-bottom:2.4rem;
+  max-width:760px;
+}
+.analogy .eyebrow{ margin-bottom:0.35rem; display:block; }
+
+/* stage layout: viz + commands */
+.stage{
+  display:grid; grid-template-columns: 1.15fr 0.85fr; gap:2.4rem; align-items:start;
+}
+@media (max-width: 880px){ .stage{ grid-template-columns:1fr; } }
+
+.viz-box{
+  background:linear-gradient(180deg, var(--panel), #08110a);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:1.6rem;
+  position:relative;
+  min-height:280px;
+  box-shadow:0 0 40px rgba(0,0,0,0.4), inset 0 0 60px rgba(77,255,136,0.03);
+}
+.viz-controls{
+  display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1.2rem;
+}
+.btn{
+  font-family:'IBM Plex Mono',monospace; font-size:0.72rem;
+  background:transparent; border:1px solid var(--phosphor-dim); color:var(--phosphor);
+  padding:0.45rem 0.8rem; border-radius:3px; cursor:pointer; letter-spacing:0.03em;
+  transition:all .15s ease;
+}
+.btn:hover{ background:var(--phosphor); color:#03170a; box-shadow:0 0 14px rgba(77,255,136,0.5); }
+.btn.alt{ border-color:var(--amber); color:var(--amber); }
+.btn.alt:hover{ background:var(--amber); color:#241200; box-shadow:0 0 14px rgba(255,181,69,0.5); }
+.btn.danger{ border-color:var(--red); color:var(--red); }
+.btn.danger:hover{ background:var(--red); color:#2a0000; box-shadow:0 0 14px rgba(255,95,86,0.5); }
+
+.viz-caption{
+  margin-top:0.9rem; font-size:0.78rem; color:var(--ink-dim); min-height:1.4em;
+}
+.viz-caption b{ color:var(--phosphor-bright); }
+
+/* command cards */
+.cmdlist{ display:flex; flex-direction:column; gap:0.7rem; }
+.cmd-card{
+  border:1px solid var(--line); border-radius:6px; padding:0.85rem 1rem;
+  background:rgba(255,255,255,0.015);
+  transition:border-color .2s ease, transform .2s ease;
+}
+.cmd-card:hover{ border-color:var(--phosphor-dim); transform:translateX(3px); }
+.cmd-card code.cmd{
+  display:inline-block; color:var(--amber); font-size:0.86rem; font-weight:600;
+  background:rgba(255,181,69,0.08); padding:0.15rem 0.45rem; border-radius:3px; margin-bottom:0.4rem;
+}
+.cmd-card .scenario{ font-size:0.82rem; color:var(--ink-dim); }
+.cmd-card .scenario b{ color:var(--ink); }
+
+/* generic SVG viz styling */
+svg text{ font-family:'IBM Plex Mono',monospace; }
+.node-label{ fill:var(--ink); font-size:11px; }
+.dim-label{ fill:var(--ink-dim); font-size:10px; }
+
+/* ============ FOOTER ============ */
+footer{
+  padding:3rem clamp(1.2rem,4vw,3rem) 4rem;
+  color:var(--ink-dim); font-size:0.78rem;
+  display:flex; justify-content:space-between; flex-wrap:wrap; gap:1rem;
+}
+footer .glow{ color:var(--phosphor); }
+
+/* checklist */
+.checklist{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:0.6rem; margin-top:1rem; }
+.check-item{
+  display:flex; align-items:center; gap:0.6rem;
+  border:1px solid var(--line); border-radius:4px; padding:0.6rem 0.8rem;
+  cursor:pointer; user-select:none; font-size:0.8rem;
+}
+.check-item .box{ width:14px; height:14px; border:1px solid var(--phosphor-dim); border-radius:2px; flex:0 0 auto; position:relative; }
+.check-item.done .box{ background:var(--phosphor); box-shadow:0 0 8px var(--phosphor); }
+.check-item.done{ color:var(--phosphor); text-decoration:line-through; text-decoration-color:var(--phosphor-dim); }
+
+/* ---- shared animation keyframes ---- */
+@keyframes fileMoveRight{ 0%{ transform:translateX(0); opacity:1;} 45%{opacity:1;} 100%{ transform:translateX(var(--travel,220px)); opacity:1;} }
+@keyframes popIn{ 0%{ transform:scale(0.4); opacity:0;} 60%{transform:scale(1.08);} 100%{transform:scale(1); opacity:1;} }
+@keyframes dashFlow{ to{ stroke-dashoffset:-40; } }
+@keyframes flashRed{ 0%,100%{ fill:var(--red); } 50%{ fill:#7a1a16; } }
+@keyframes pulseGreen{ 0%,100%{ filter:drop-shadow(0 0 2px var(--phosphor)); } 50%{ filter:drop-shadow(0 0 10px var(--phosphor)); } }
+@keyframes fadeUp{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+</style>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<section class="hero crt-frame">
+  <div class="boot-log" id="bootLog"></div>
+  <h1>GIT: ZERO&nbsp;→&nbsp;HERO</h1>
+  <p class="sub">An interactive field manual. Every command explained like you're five, then shown as a little machine you can poke at. No jargon left unexplained.</p>
+  <div class="tagline">
+    <span>11 phases</span>
+    <span>click-to-replay diagrams</span>
+    <span>plain-English analogies</span>
+    <span>scenario-based commands</span>
+  </div>
+  <div class="scroll-hint">▾ scroll to begin ▾</div>
+</section>
+
+<!-- ============ NAV RAIL ============ -->
+<div class="railwrap">
+  <div class="rail" id="rail"></div>
+</div>
+
+<div class="crt-frame" id="phases"></div>
+
+<footer class="crt-frame">
+  <div>git-learning-plan.md companion &mdash; <span class="glow">rendered locally, no build step</span></div>
+  <div>press <code class="mono">R</code> on any diagram to replay the last animation</div>
+</footer>
+
+<script>
+/* ---------------- Boot log typewriter ---------------- */
+const bootLines = [
+  "$ initializing git-hero.iso ...",
+  "  mounting /working-directory  [OK]",
+  "  mounting /staging-area       [OK]",
+  "  mounting /repository         [OK]",
+  "  linking remote://origin      [OK]",
+  "$ ready."
+];
+const bootEl = document.getElementById('bootLog');
+(function typeBoot(i, ci){
+  if(i>=bootLines.length){ bootEl.innerHTML += '<span class="cursor-blink"></span>'; return; }
+  const line = bootLines[i];
+  if(ci===0) bootEl.innerHTML += (i>0?'\n':'') ;
+  if(ci<line.length){
+    bootEl.innerHTML = bootEl.innerHTML; // no-op keep
+    bootEl.textContent += line[ci];
+    setTimeout(()=>typeBoot(i,ci+1), 8);
+  } else {
+    if(line.includes('OK')) bootEl.innerHTML = bootEl.innerHTML.replace('[OK]','<span class="ok">[OK]</span>');
+    setTimeout(()=>typeBoot(i+1,0), 60);
+  }
+})(0,0);
+
+/* ---------------- Data: phases ---------------- */
+const PHASES = [
+  {
+    id:'p0', num:'00', title:'Setup — Meet the Machine',
+    desc:"Before typing a single command, understand git's <b>3-room house</b>: your <b>Working Directory</b> (the desk you're editing on), the <b>Staging Area</b> (a tray where you place things you're about to photograph), and the <b>Repository</b> (the photo album where snapshots live forever).",
+    analogy:"Think of git like a camera with a prep tray. You don't photograph your whole messy desk — you pick items, put them on a tray (stage), then press the shutter (commit) to save a permanent photo.",
+    viz:'rooms',
+    commands:[
+      ['git config --global user.name "..."','Stamps your name on every photo you take, so the album knows whose work it is.'],
+      ['git config --global user.email "..."','Same idea — your email becomes part of every commit signature.'],
+      ['git config --list','Scenario: you forgot which name/email you set on this machine — check before your first commit.'],
+      ['git --version','Scenario: setting up a new machine — confirms git actually installed and which version.'],
+      ['git config --global init.defaultBranch main','Scenario: tired of new repos defaulting to "master" — sets your preferred default branch name once, globally.'],
+    ]
+  },
+  {
+    id:'p1', num:'01', title:'Local Basics — Save Points',
+    desc:"This is the core loop you'll repeat thousands of times: <b>edit → stage → commit</b>. Every commit is a save point you can always return to.",
+    analogy:"Like a video game's save system. You play (edit files), walk to a checkpoint and load your inventory into it (stage), then hit 'Save Game' (commit). Each save is permanent and named.",
+    viz:'stage-commit',
+    commands:[
+      ['git init','Scenario: starting a brand new project folder — turns an ordinary folder into a git-tracked one.'],
+      ['git status','Scenario: you forget what you changed — shows what\'s edited, staged, or untouched right now.'],
+      ['git add <file>','Scenario: you fixed one bug in a 5-file change — stage only that file, leave the rest for later.'],
+      ['git commit -m "msg"','Scenario: staged changes are ready — permanently saves them with a message explaining why.'],
+      ['git log --oneline','Scenario: reviewing project history fast — one line per save point.'],
+      ['git diff / --staged','Scenario: "what exactly did I change?" — diff shows unstaged edits, --staged shows what\'s about to be committed.'],
+      ['.gitignore','Scenario: build folders / secrets keep showing up in git status — lists patterns git should never track.'],
+      ['git show <commit>','Scenario: want the exact snapshot + diff of one specific save point — shows it in full.'],
+    ]
+  },
+  {
+    id:'p2', num:'02', title:'Undoing Things — The Time Machine',
+    desc:"Mistakes happen. Git gives you three very different undo buttons — each rewrites a different amount of history.",
+    analogy:"Amend = 'retake the last photo before anyone saw it.' Reset = 'rip pages out of the album.' Revert = 'add a new photo that visibly cancels the old one, keeping the record honest.'",
+    viz:'undo',
+    commands:[
+      ['git commit --amend','Scenario: typo in your last commit message, or forgot one file — fixes the most recent save point in place.'],
+      ['git reset --soft HEAD~1','Scenario: last commit was too early — uncommits it but keeps changes staged.'],
+      ['git reset --hard HEAD~1','Scenario: last commit was garbage, nuke it entirely — DANGER: deletes the work too.'],
+      ['git revert <commit>','Scenario: bad commit already pushed and others pulled it — adds a new commit that undoes it, history stays intact.'],
+      ['git restore <file>','Scenario: you messed up a file, want your last saved version back.'],
+      ['git restore --staged <file>','Scenario: you staged the wrong file by mistake — takes it off the tray, keeps your edits.'],
+      ['git reset --mixed HEAD~1','Scenario: default reset mode — uncommits AND unstages, but keeps your edits on disk.'],
+    ]
+  },
+  {
+    id:'p3', num:'03', title:'Branching — Parallel Timelines',
+    desc:"A branch is a separate timeline you can experiment in without touching the main story. Merging is how two timelines rejoin into one.",
+    analogy:"Like a choose-your-own-adventure book: you photocopy the current page (branch), scribble a wild idea on the copy, and if it works out you glue it back into the main book (merge). If two pages changed the same sentence — that's a conflict, and you decide the final wording by hand.",
+    viz:'branch',
+    commands:[
+      ['git branch <name>','Scenario: about to try a risky idea — create a parallel timeline without touching main.'],
+      ['git switch -c <name>','Scenario: same as above but jump into it immediately — create + switch in one move.'],
+      ['git merge <branch>','Scenario: your feature branch works — fold its timeline back into main.'],
+      ['(conflict) edit → git add → git commit','Scenario: two branches touched the same line — git can\'t auto-decide, you pick the final version by hand.'],
+      ['git branch -d <name>','Scenario: feature merged and done — delete the now-redundant branch.'],
+      ['git branch -D <name>','Scenario: branch has UNMERGED work you\'re sure you don\'t need — force-deletes it anyway.'],
+      ['git switch <branch> / checkout <branch>','Scenario: hopping between existing timelines — moves your working directory to that branch\'s snapshot.'],
+      ['git merge <branch> (fast-forward)','Scenario: main hasn\'t moved since you branched — git just slides the main pointer forward, no merge commit needed.'],
+    ]
+  },
+  {
+    id:'p4', num:'04', title:'Remotes — Talking to the Cloud',
+    desc:"Your repository can have a twin living on a server (GitHub etc). Push sends your photos up; pull brings new photos down.",
+    analogy:"Think of it like a shared Dropbox album. 'Push' uploads your new photos for everyone. 'Fetch' peeks at what others added without touching your album. 'Pull' actually merges those new photos into yours.",
+    viz:'remote',
+    commands:[
+      ['git remote add origin <url>','Scenario: local project exists, no cloud copy yet — links it to a GitHub repo address.'],
+      ['git push -u origin main','Scenario: first upload — sends commits up and remembers this pairing for future pushes.'],
+      ['git fetch','Scenario: "did my teammate push anything?" — downloads new history WITHOUT merging it into your files yet.'],
+      ['git pull','Scenario: you want teammates\' changes merged into your working copy right now — fetch + merge combined.'],
+      ['git clone <url>','Scenario: joining a project for the first time — downloads the entire repo + history to a new machine.'],
+      ['git remote -v','Scenario: "which cloud is this actually linked to?" — lists remote names and their URLs.'],
+      ['tracking branches','Scenario: after first push -u, plain "git push"/"git pull" know where to sync — the local and remote branch are linked automatically.'],
+    ]
+  },
+  {
+    id:'p5', num:'05', title:'Collaboration — Pull Requests',
+    desc:"Teams rarely push straight to main. Instead: branch → push → open a Pull Request → get reviewed → merge.",
+    analogy:"Like submitting a school essay draft for peer review before it goes in the final anthology. Your branch is the draft; the PR is the review thread; merging is publishing it into the anthology (main).",
+    viz:'pr',
+    commands:[
+      ['git push -u origin feature/x','Scenario: your branch is ready for eyes on it — pushes it to the cloud so a PR can be opened against it.'],
+      ['Open Pull Request (GitHub UI)','Scenario: code\'s ready for review — proposes merging feature/x into main, teammates comment inline.'],
+      ['git log --graph --oneline --all','Scenario: confused how branches relate — draws the whole tree of timelines in your terminal.'],
+      ['Merge PR (squash / merge / rebase)','Scenario: review approved — folds the reviewed branch into main, closing the loop.'],
+      ['Fork vs Clone','Scenario: contributing to a repo you don\'t own — fork makes your own cloud copy first, THEN you clone your fork locally.'],
+      ['git rm --cached <file>','Scenario: a file got committed before you added it to .gitignore — untracks it from git without deleting it from disk.'],
+    ]
+  },
+  {
+    id:'p6', num:'06', title:'Rewriting History — Rebase & Cherry-pick',
+    desc:"Rebase replays your commits on top of a new base — like editing the story so it reads as if it happened later, in order.",
+    analogy:"Merge says 'these two timelines collided, here's a knot tying them together.' Rebase says 'pretend your changes happened AFTER everyone else's, so the story reads as one straight line.' Never rebase a timeline other people are already reading from (a shared/public branch) — you'd yank pages out from under them.",
+    viz:'rebase',
+    commands:[
+      ['git rebase main','Scenario: main moved on while you worked — replay your branch\'s commits on top of the latest main for a clean, linear history.'],
+      ['git rebase -i HEAD~4','Scenario: 4 messy "wip" commits before a PR — interactively squash/reword/reorder them into one clean commit.'],
+      ['git cherry-pick <commit>','Scenario: one specific fix on another branch is needed here NOW, not the whole branch — grabs just that one commit.'],
+      ['git reflog','Scenario: "I think I just destroyed my work" — a safety log of every place HEAD has ever pointed, your undo-undo button.'],
+      ['git rebase --continue / --abort','Scenario: mid-rebase you hit a conflict — fix it and --continue, or bail entirely with --abort to return to how you started.'],
+    ]
+  },
+  {
+    id:'p7', num:'07', title:'Inspection & Debugging',
+    desc:"When something broke and you don't know when or who — git has a metal detector and a stash pocket.",
+    analogy:"git bisect is playing 'hot or cold' with your commit history: git picks a midpoint, you say good/bad, it halves the search space each time until the guilty commit is caught. git stash is shoving your messy desk into a drawer so you can deal with something urgent, then pulling the drawer back out later.",
+    viz:'bisect',
+    commands:[
+      ['git bisect start / good / bad','Scenario: a bug appeared sometime in the last 50 commits, unclear which — binary-searches to pinpoint the exact culprit.'],
+      ['git blame <file>','Scenario: "who wrote this weird line and why?" — shows the commit + author responsible for each line.'],
+      ['git stash','Scenario: mid-edit, urgent hotfix needed — shelves your unfinished changes so your working directory is clean.'],
+      ['git stash pop','Scenario: hotfix done — brings your shelved changes back out.'],
+      ['git log -S"text"','Scenario: "which commit introduced/removed this exact string?" — searches history by code content, not message.'],
+      ['git log --author / --since / -p','Scenario: "what did Priya change last week?" — filters history by person, date range, or shows full patches inline.'],
+      ['git stash list / apply / drop','Scenario: several shelved changes piled up — list sees them all, apply reuses one without removing it, drop discards one.'],
+      ['git tag / annotated vs lightweight','Scenario: shipping v1.2.0 — tag marks that exact commit permanently; annotated tags also store author, date, and a message (use these for releases).'],
+    ]
+  },
+  {
+    id:'p8', num:'08', title:'Internals — What Git Actually Is',
+    desc:"Under the hood, git is just a content-addressed graph of objects: blobs (file contents), trees (folders), commits (snapshots + parent links).",
+    analogy:"Every version of every file gets a fingerprint (hash). A commit isn't a diff — it's a full snapshot that mostly points at the same unchanged fingerprints as before, only the changed ones are new. That's why git is fast: unchanged files cost almost nothing to 'save' again.",
+    viz:'internals',
+    commands:[
+      ['git cat-file -p <hash>','Scenario: curiosity / debugging deep issue — prints the raw content of any git object by its hash.'],
+      ['git gc','Scenario: repo folder ballooning in size — compresses loose objects into efficient packfiles.'],
+      ['git fsck','Scenario: suspect repo corruption — verifies the integrity of the whole object database.'],
+      ['.git/ directory','Scenario: curious what git actually stores — objects/ (the album), refs/ (branch pointers), HEAD (your current position), all live here.'],
+      ['detached HEAD','Scenario: you checked out a commit hash directly, not a branch — you\'re "detached," new commits here can get lost unless you branch from them.'],
+    ]
+  },
+  {
+    id:'p9', num:'09', title:'Multi-repo & Large Projects',
+    desc:"Some projects are too big or too composed-of-other-projects for one flat repo.",
+    analogy:"A submodule is a repo-inside-a-repo — like embedding a photo album inside another album, but it's really just a linked reference, not a copy. A worktree is having two doors into the same house, each door open to a different room (branch), simultaneously.",
+    viz:'submodule',
+    commands:[
+      ['git submodule add <url>','Scenario: your project depends on another whole git repo (e.g. a shared component lib) — embeds it as a linked reference.'],
+      ['git worktree add ../hotfix main','Scenario: mid-feature, urgent hotfix needed on main, don\'t want to stash — opens a second working folder on a different branch simultaneously.'],
+      ['git sparse-checkout','Scenario: monorepo is huge, you only work in one folder — checks out just the slice you need.'],
+      ['git subtree','Scenario: want another repo\'s code merged directly into yours (no separate linked repo to manage) — an alternative to submodules that copies the code in.'],
+      ['Git LFS','Scenario: repo needs to track huge binary files (videos, PSDs) — stores pointers in git, actual bytes in a separate large-file store.'],
+    ]
+  },
+  {
+    id:'p10', num:'10', title:'Hero — Workflow Mastery',
+    desc:"The final layer isn't new commands — it's discipline: conventions, automation, and safety nets that make git invisible in daily work.",
+    analogy:"A pre-commit hook is a bouncer at the door of your repository, checking IDs before anything gets in. Conventional commits are a shared shorthand ('fix:', 'feat:') so history reads like a changelog, not a diary.",
+    viz:'hooks',
+    commands:[
+      ['git commit -S -m "..."','Scenario: proving commits really came from you — cryptographically signs the commit.'],
+      ['pre-commit hook','Scenario: block commits containing secrets or forbidden keywords, automatically, before they ever save.'],
+      ['git config --global alias.co switch','Scenario: typing "git switch" 40x/day is tedious — aliases compress it to "git co".'],
+      ['git filter-repo','Scenario: a secret key got committed 200 commits ago — rewrites entire history to scrub it out (use with extreme care).'],
+      ['Git Flow / GitHub Flow / Trunk-Based','Scenario: choosing how your team branches — GitHub Flow (simple: branch + PR + merge), Git Flow (structured: develop/release/hotfix branches), Trunk-Based (everyone commits to main constantly, behind feature flags).'],
+      ['Conventional Commits (feat:, fix:, ...)','Scenario: want auto-generated changelogs — prefixing commit messages by type makes history machine-readable.'],
+    ]
+  },
+];
+
+const TASKS = {
+  p0:"Configure git, verify with git config --list.",
+  p1:"Create a repo, make 5 commits building a small text project (e.g. a README that grows).",
+  p2:"Make a bad commit, then fix it 3 ways in separate scenarios: amend, reset, revert.",
+  p3:"Create 2 branches editing the same line of a file, merge, resolve the conflict by hand.",
+  p4:"Create a GitHub repo, push your local repo, clone it elsewhere, make a change, push/pull to sync.",
+  p5:"Open a PR on a personal repo: branch → push → PR → merge on GitHub.",
+  p6:"Squash 4 messy commits into 1 clean commit via interactive rebase. Recover a \"lost\" commit using reflog.",
+  p7:"Use git bisect to find the commit that introduced a bug in a small script repo.",
+  p8:"Manually inspect .git/objects, decode a blob/tree/commit with git cat-file.",
+  p9:"Add a submodule to a repo, update it, understand detached HEAD inside the submodule.",
+  p10:"Set up a pre-commit hook that blocks commits with a forbidden keyword. Configure 3 custom aliases.",
+};
+
+/* ---------------- Build nav rail + sections ---------------- */
+const rail = document.getElementById('rail');
+const container = document.getElementById('phases');
+
+PHASES.forEach(p=>{
+  const b = document.createElement('button');
+  b.textContent = p.num+' · '+p.title.split(' — ')[0];
+  b.onclick = ()=>document.getElementById(p.id).scrollIntoView({behavior:'smooth', block:'start'});
+  b.dataset.target = p.id;
+  rail.appendChild(b);
+});
+
+PHASES.forEach(p=>{
+  const sec = document.createElement('section');
+  sec.className = 'phase';
+  sec.id = p.id;
+  sec.innerHTML = `
+    <div class="phase-head">
+      <span class="phase-num">PHASE ${p.num}</span>
+      <h2>${p.title}</h2>
+    </div>
+    <p class="phase-desc">${p.desc}</p>
+    <div class="analogy">
+      <span class="eyebrow">layman's terms</span>
+      ${p.analogy}
+    </div>
+    <div class="analogy" style="border-color:var(--amber); background:rgba(255,181,69,0.04);">
+      <span class="eyebrow" style="color:var(--amber);">mini-task</span>
+      ${TASKS[p.id] || ''}
+    </div>
+    <div class="stage">
+      <div>
+        <div class="viz-box" id="viz-${p.id}"></div>
+        <div class="viz-caption" id="cap-${p.id}">Click a button above to run the animation.</div>
+      </div>
+      <div class="cmdlist">
+        ${p.commands.map(c=>`
+          <div class="cmd-card">
+            <code class="cmd">${c[0]}</code>
+            <div class="scenario">${c[1]}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+  `;
+  container.appendChild(sec);
+});
+
+/* ---------------- Practice Resources + Progress Checklist ---------------- */
+const tailSec = document.createElement('section');
+tailSec.className = 'phase';
+tailSec.id = 'resources';
+tailSec.innerHTML = `
+  <div class="phase-head"><span class="phase-num">EXTRA</span><h2>Practice Resources</h2></div>
+  <div class="cmdlist" style="max-width:760px; margin-bottom:3rem;">
+    <div class="cmd-card"><code class="cmd">learngitbranching.js.org</code><div class="scenario">Interactive visual practice ground for branching and rebase — a sandbox with no real repo at risk.</div></div>
+    <div class="cmd-card"><code class="cmd">Contribute to a real repo</code><div class="scenario">Find a "good first issue" on a small open-source project — real PRs, real review, real stakes.</div></div>
+    <div class="cmd-card"><code class="cmd">Build a personal project</code><div class="scenario">Run the full workflow end to end: branches, PRs, rebase, tags, releases — on something you own.</div></div>
+  </div>
+  <div class="phase-head"><span class="phase-num">TRACK</span><h2>Progress Checklist</h2></div>
+  <p class="phase-desc">Click each phase once you've done its mini-task. Saved in your browser only.</p>
+  <div class="checklist" id="checklist"></div>
+`;
+container.appendChild(tailSec);
+
+const railBtnResources = document.createElement('button');
+railBtnResources.textContent = '· Resources';
+railBtnResources.dataset.target = 'resources';
+railBtnResources.onclick = ()=>tailSec.scrollIntoView({behavior:'smooth', block:'start'});
+rail.appendChild(railBtnResources);
+
+const CL_KEY = 'git-hero-checklist';
+const clState = JSON.parse(localStorage.getItem(CL_KEY) || '{}');
+const clEl = document.getElementById('checklist');
+PHASES.forEach(p=>{
+  const item = document.createElement('div');
+  item.className = 'check-item' + (clState[p.id] ? ' done' : '');
+  item.innerHTML = `<span class="box"></span><span>Phase ${p.num} — ${p.title.split(' — ')[0]}</span>`;
+  item.onclick = ()=>{
+    clState[p.id] = !clState[p.id];
+    localStorage.setItem(CL_KEY, JSON.stringify(clState));
+    item.classList.toggle('done', clState[p.id]);
+  };
+  clEl.appendChild(item);
+});
+
+/* ---------------- scroll-spy for rail ---------------- */
+const railBtns = [...rail.children];
+const sections = PHASES.map(p=>document.getElementById(p.id));
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      railBtns.forEach(b=>b.classList.remove('active'));
+      const btn = railBtns.find(b=>b.dataset.target===e.target.id);
+      if(btn){ btn.classList.add('active'); btn.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'}); }
+    }
+  });
+}, {rootMargin:'-40% 0px -55% 0px'});
+sections.forEach(s=>io.observe(s));
+
+/* ================= VISUALIZATIONS ================= */
+/* Each renders inert SVG/HTML into its viz-box, plus buttons that trigger CSS-class based replayable animations */
+
+function setCaption(id, html){ document.getElementById('cap-'+id).innerHTML = html; }
+function box(id){ return document.getElementById('viz-'+id); }
+
+/* ---- p0: three rooms ---- */
+(function(){
+  const el = box('p0');
+  el.innerHTML = `
+  <svg viewBox="0 0 480 220" width="100%" height="220">
+    <g>
+      <rect x="10" y="60" width="130" height="110" rx="6" fill="none" stroke="#1e6b3d" stroke-width="1.5"/>
+      <text x="75" y="50" text-anchor="middle" class="node-label" fill="#4dff88">Working Dir</text>
+      <text x="75" y="200" text-anchor="middle" class="dim-label">your desk</text>
+
+      <rect x="175" y="60" width="130" height="110" rx="6" fill="none" stroke="#1e6b3d" stroke-width="1.5"/>
+      <text x="240" y="50" text-anchor="middle" class="node-label" fill="#ffb545">Staging Area</text>
+      <text x="240" y="200" text-anchor="middle" class="dim-label">the tray</text>
+
+      <rect x="340" y="60" width="130" height="110" rx="6" fill="none" stroke="#1e6b3d" stroke-width="1.5"/>
+      <text x="405" y="50" text-anchor="middle" class="node-label" fill="#5fc9ff">Repository</text>
+      <text x="405" y="200" text-anchor="middle" class="dim-label">the photo album</text>
+
+      <path d="M140 115 H175" stroke="#1e6b3d" stroke-width="2" marker-end="url(#arrow0)"/>
+      <path d="M305 115 H340" stroke="#1e6b3d" stroke-width="2" marker-end="url(#arrow0)"/>
+
+      <circle id="p0-file" cx="75" cy="115" r="10" fill="#4dff88" style="filter:drop-shadow(0 0 4px #4dff88)"/>
+      <text id="p0-label" x="75" y="119" text-anchor="middle" font-size="10" fill="#03170a" font-weight="bold">f</text>
+    </g>
+    <defs><marker id="arrow0" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#1e6b3d"/></marker></defs>
+  </svg>`;
+  const controls = document.createElement('div');
+  controls.className = 'viz-controls';
+  controls.innerHTML = `<button class="btn" data-a="add">git add</button><button class="btn alt" data-a="commit">git commit</button><button class="btn" data-a="reset">reset scene</button>`;
+  el.parentElement.insertBefore(controls, el.nextSibling.nextSibling ? el.nextSibling : null);
+  el.after(controls);
+  const file = ()=>document.getElementById('p0-file');
+  const lbl = ()=>document.getElementById('p0-label');
+  controls.addEventListener('click', (e)=>{
+    const a = e.target.dataset.a; if(!a) return;
+    if(a==='add'){ file().setAttribute('cx',240); lbl().setAttribute('x',240); setCaption('p0','<b>git add</b> moved the file from your desk onto the tray. Nothing is saved permanently yet.'); }
+    if(a==='commit'){ file().setAttribute('cx',405); lbl().setAttribute('x',405); setCaption('p0','<b>git commit</b> took the tray\'s contents and glued a permanent photo into the album.'); }
+    if(a==='reset'){ file().setAttribute('cx',75); lbl().setAttribute('x',75); setCaption('p0','Scene reset. The file lives back on your desk.'); }
+  });
+})();
+
+/* ---- p1: stage-commit loop (chain of commits growing) ---- */
+(function(){
+  const el = box('p1');
+  el.innerHTML = `<svg viewBox="0 0 480 160" width="100%" height="180" id="p1-svg">
+    <line x1="20" y1="90" x2="460" y2="90" stroke="#163420" stroke-width="2"/>
+    <g id="p1-commits"></g>
+  </svg>`;
+  const controls = document.createElement('div');
+  controls.className='viz-controls';
+  controls.innerHTML = `<button class="btn" data-a="save">git add + commit</button><button class="btn" data-a="reset">reset scene</button>`;
+  el.after(controls);
+  let n=0;
+  const gEl = document.getElementById('p1-commits');
+  function render(){
+    gEl.innerHTML='';
+    for(let i=0;i<n;i++){
+      const cx = 50 + i*70;
+      gEl.innerHTML += `<circle cx="${cx}" cy="90" r="14" fill="#0c140d" stroke="#4dff88" stroke-width="2" style="animation:popIn .4s ease"/>
+      <text x="${cx}" y="94" text-anchor="middle" font-size="10" fill="#4dff88">#${i+1}</text>
+      <text x="${cx}" y="120" text-anchor="middle" class="dim-label">save</text>`;
+    }
+  }
+  controls.addEventListener('click', e=>{
+    const a=e.target.dataset.a; if(!a) return;
+    if(a==='save' && n<6){ n++; render(); setCaption('p1', `Save point <b>#${n}</b> created. Your desk is clean; the tray is empty; the album has ${n} photo${n>1?'s':''}.`); }
+    if(a==='save' && n>=6){ setCaption('p1','Timeline full for this demo — hit reset to try again.'); }
+    if(a==='reset'){ n=0; render(); setCaption('p1','Scene reset.'); }
+  });
+  render();
+})();
+
+/* ---- p2: undo — amend / reset / revert ---- */
+(function(){
+  const el = box('p2');
+  el.innerHTML = `<svg viewBox="0 0 480 170" width="100%" height="190" id="p2-svg"></svg>`;
+  const controls = document.createElement('div');
+  controls.className='viz-controls';
+  controls.innerHTML = `<button class="btn" data-a="amend">--amend</button><button class="btn alt" data-a="reset">reset --hard</button><button class="btn" data-a="revert">revert</button><button class="btn" data-a="clear">reset scene</button>`;
+  el.after(controls);
+  const svg = document.getElementById('p2-svg');
+  function baseChain(){
+    return `<line x1="20" y1="90" x2="380" y2="90" stroke="#163420" stroke-width="2"/>
+    <circle cx="60" cy="90" r="14" fill="#0c140d" stroke="#4dff88" stroke-width="2"/><text x="60" y="94" text-anchor="middle" font-size="10" fill="#4dff88">#1</text>
+    <circle cx="140" cy="90" r="14" fill="#0c140d" stroke="#4dff88" stroke-width="2"/><text x="140" y="94" text-anchor="middle" font-size="10" fill="#4dff88">#2</text>
+    <circle id="p2-last" cx="220" cy="90" r="14" fill="#0c140d" stroke="#ff5f56" stroke-width="2"/><text x="220" y="94" text-anchor="middle" font-size="10" fill="#ff5f56">#3</text>
+    <text x="220" y="130" text-anchor="middle" class="dim-label">"oops"</text>`;
+  }
+  function render(){ svg.innerHTML = baseChain(); }
+  render();
+  controls.addEventListener('click', e=>{
+    const a=e.target.dataset.a; if(!a) return;
+    if(a==='amend'){
+      render();
+      svg.innerHTML += `<circle cx="220" cy="90" r="14" fill="#0c140d" stroke="#a6ffce" stroke-width="3" style="animation:pulseGreen 1s ease infinite"/><text x="220" y="94" text-anchor="middle" font-size="10" fill="#a6ffce">#3'</text><text x="220" y="130" text-anchor="middle" class="dim-label" fill="#a6ffce">"fixed"</text>`;
+      setCaption('p2','<b>amend</b> replaced #3 in place with a corrected version. History length unchanged.');
+    }
+    if(a==='reset'){
+      render();
+      document.getElementById('p2-last').style.animation='flashRed .5s ease 2';
+      setTimeout(()=>{ svg.innerHTML = `<line x1="20" y1="90" x2="380" y2="90" stroke="#163420" stroke-width="2"/>
+      <circle cx="60" cy="90" r="14" fill="#0c140d" stroke="#4dff88" stroke-width="2"/><text x="60" y="94" text-anchor="middle" font-size="10" fill="#4dff88">#1</text>
+      <circle cx="140" cy="90" r="14" fill="#0c140d" stroke="#a6ffce" stroke-width="3" style="animation:pulseGreen 1s ease infinite"/><text x="140" y="94" text-anchor="middle" font-size="10" fill="#a6ffce">#2 ← HEAD</text>
+      <text x="260" y="94" text-anchor="middle" class="dim-label" fill="#ff5f56">#3 deleted</text>`; }, 700);
+      setCaption('p2','<b>reset --hard</b> ripped #3 out of the album entirely — the work is gone. Use only on commits nobody else has.');
+    }
+    if(a==='revert'){
+      render();
+      setTimeout(()=>{
+        svg.innerHTML += `<circle cx="300" cy="90" r="14" fill="#0c140d" stroke="#5fc9ff" stroke-width="2" style="animation:popIn .4s ease"/><text x="300" y="94" text-anchor="middle" font-size="10" fill="#5fc9ff">#4</text><text x="300" y="130" text-anchor="middle" class="dim-label" fill="#5fc9ff">"undo #3"</text>`;
+      }, 200);
+      setCaption('p2','<b>revert</b> keeps #3 visible in history but adds new commit #4 that cancels its effect. Safe for shared branches.');
+    }
+    if(a==='clear'){ render(); setCaption('p2','Scene reset.'); }
+  });
+})();
+
+/* ---- p3: branch/merge with conflict ---- */
+(function(){
+  const el = box('p3');
+  el.innerHTML = `<svg viewBox="0 0 480 220" width="100%" height="220" id="p3-svg"></svg>`;
+  const controls = document.createElement('div');
+  controls.className='viz-controls';
+  controls.innerHTML = `<button class="btn" data-a="branch">create branch</button><button class="btn" data-a="merge">merge (clean)</button><button class="btn danger" data-a="conflict">merge (conflict)</button><button class="btn" data-a="clear">reset scene</button>`;
+  el.after(controls);
+  const svg = document.getElementById('p3-svg');
+  function baseline(){
+    svg.innerHTML = `
+    <line x1="20" y1="110" x2="200" y2="110" stroke="#163420" stroke-width="2"/>
+    <circle cx="50" cy="110" r="12" fill="#0c140d" stroke="#4dff88" stroke-width="2"/>
+    <circle cx="120" cy="110" r="12" fill="#0c140d" stroke="#4dff88" stroke-width="2"/>
+    <text x="10" y="105" class="dim-label">main</text>`;
+  }
+  baseline();
+  controls.addEventListener('click', e=>{
+    const a = e.target.dataset.a; if(!a) return;
+    if(a==='branch'){
+      baseline();
+      svg.innerHTML += `<line x1="120" y1="110" x2="120" y2="160" stroke="#5fc9ff" stroke-width="2" stroke-dasharray="4 3"/>
+      <line x1="120" y1="160" x2="260" y2="160" stroke="#5fc9ff" stroke-width="2" style="stroke-dasharray:6 4; animation:dashFlow 1s linear infinite"/>
+      <circle cx="190" cy="160" r="12" fill="#0c140d" stroke="#5fc9ff" stroke-width="2" style="animation:popIn .4s ease"/>
+      <text x="130" y="180" class="dim-label" fill="#5fc9ff">feature</text>`;
+      setCaption('p3','A new branch forks off #2. It shares all history up to that point, then diverges.');
+    }
+    if(a==='merge'){
+      svg.innerHTML += `<line x1="190" y1="150" x2="260" y2="115" stroke="#a6ffce" stroke-width="2" style="stroke-dasharray:6 4; animation:dashFlow 1s linear infinite"/>
+      <circle cx="260" cy="110" r="13" fill="#0c140d" stroke="#a6ffce" stroke-width="3" style="animation:popIn .5s ease, pulseGreen 1.2s ease infinite"/>
+      <text x="260" y="94" text-anchor="middle" class="dim-label" fill="#a6ffce">merge commit</text>`;
+      setCaption('p3','No overlapping edits — git auto-weaves both timelines into a new merge commit.');
+    }
+    if(a==='conflict'){
+      svg.innerHTML += `<line x1="190" y1="150" x2="260" y2="115" stroke="#ff5f56" stroke-width="2" style="stroke-dasharray:6 4;"/>
+      <circle cx="260" cy="110" r="13" fill="#7a1a16" stroke="#ff5f56" stroke-width="3" style="animation:flashRed .5s ease infinite"/>
+      <text x="260" y="94" text-anchor="middle" class="dim-label" fill="#ff5f56">CONFLICT!</text>
+      <text x="260" y="140" text-anchor="middle" class="dim-label">both edited same line</text>`;
+      setCaption('p3','Both branches touched the same line — git stops and asks <b>you</b> to pick the final wording, then you add + commit to finish the merge.');
+    }
+    if(a==='clear'){ baseline(); setCaption('p3','Scene reset.'); }
+  });
+})();
+
+/* ---- p4: remote push/pull ---- */
+(function(){
+  const el = box('p4');
+  el.innerHTML = `<svg viewBox="0 0 480 200" width="100%" height="200" id="p4-svg">
+    <rect x="20" y="70" width="150" height="90" rx="6" fill="none" stroke="#1e6b3d" stroke-width="1.5"/>
+    <text x="95" y="60" text-anchor="middle" class="node-label" fill="#4dff88">Local Repo</text>
+    <ellipse cx="380" cy="60" rx="80" ry="34" fill="none" stroke="#1e6b3d" stroke-width="1.5"/>
+    <text x="380" y="65" text-anchor="middle" class="node-label" fill="#5fc9ff">origin (cloud)</text>
+    <g id="p4-arrows"></g>
+  </svg>`;
+  const controls = document.createElement('div');
+  controls.className='viz-controls';
+  controls.innerHTML = `<button class="btn" data-a="push">git push</button><button class="btn alt" data-a="fetch">git fetch</button><button class="btn" data-a="pull">git pull</button>`;
+  el.after(controls);
+  const g = document.getElementById('p4-arrows');
+  controls.addEventListener('click', e=>{
+    const a = e.target.dataset.a; if(!a) return;
+    g.innerHTML='';
+    if(a==='push'){
+      g.innerHTML = `<circle cx="150" cy="100" r="8" fill="#4dff88" style="animation:fileMoveRight 1s ease forwards; --travel:200px"/>`;
+      setCaption('p4','<b>push</b> uploads your local commits so origin now matches your machine.');
+    }
+    if(a==='fetch'){
+      g.innerHTML = `<circle cx="330" cy="100" r="8" fill="#5fc9ff" style="animation:fileMoveRight 1s ease forwards reverse; --travel:200px; transform:translateX(-200px)"/>`;
+      setCaption('p4','<b>fetch</b> downloads new history from origin, but does NOT touch your working files yet.');
+    }
+    if(a==='pull'){
+      g.innerHTML = `<circle cx="330" cy="100" r="8" fill="#ffb545" style="animation:fileMoveRight 1s ease forwards reverse; --travel:200px; transform:translateX(-200px)"/>`;
+      setCaption('p4','<b>pull</b> = fetch + merge in one step. New commits land directly in your working copy.');
+    }
+  });
+})();
+
+/* ---- p5: PR flow ---- */
+(function(){
+  const el = box('p5');
+  el.innerHTML = `<svg viewBox="0 0 480 200" width="100%" height="200" id="p5-svg">
+    <rect x="20" y="150" width="120" height="35" rx="5" fill="none" stroke="#5fc9ff"/>
+    <text x="80" y="172" text-anchor="middle" class="dim-label" fill="#5fc9ff">feature/x</text>
+    <rect x="20" y="20" width="120" height="35" rx="5" fill="none" stroke="#4dff88"/>
+    <text x="80" y="42" text-anchor="middle" class="dim-label" fill="#4dff88">main</text>
+    <rect x="330" y="85" width="130" height="35" rx="5" fill="none" stroke="#ffb545" id="p5-pr" opacity="0"/>
+    <text x="395" y="107" text-anchor="middle" class="dim-label" fill="#ffb545" id="p5-pr-t" opacity="0">Pull Request</text>
+    <path id="p5-path1" d="M140 167 Q 250 167 330 105" fill="none" stroke="#163420" stroke-width="2" stroke-dasharray="5 4"/>
+  </svg>`;
+  const controls = document.createElement('div');
+  controls.className='viz-controls';
+  controls.innerHTML = `<button class="btn" data-a="open">open PR</button><button class="btn alt" data-a="merge">approve + merge</button><button class="btn" data-a="clear">reset scene</button>`;
+  el.after(controls);
+  controls.addEventListener('click', e=>{
+    const a = e.target.dataset.a; if(!a) return;
+    const pr = document.getElementById('p5-pr'), t=document.getElementById('p5-pr-t');
+    if(a==='open'){ pr.style.transition='opacity .5s'; pr.setAttribute('opacity',1); t.style.transition='opacity .5s'; t.setAttribute('opacity',1); setCaption('p5','PR opened: a review thread proposing to merge feature/x into main. Reviewers comment inline.'); }
+    if(a==='merge'){ pr.setAttribute('stroke','#4dff88'); pr.style.animation='pulseGreen 1s ease infinite'; setCaption('p5','Approved → merged. feature/x\'s commits now live permanently in main.'); }
+    if(a==='clear'){ pr.setAttribute('opacity',0); t.setAttribute('opacity',0); pr.style.animation=''; pr.setAttribute('stroke','#ffb545'); setCaption('p5','Scene reset.'); }
+  });
+})();
+
+/* ---- p6: rebase ---- */
+(function(){
+  const el = box('p6');
+  el.innerHTML = `<svg viewBox="0 0 480 200" width="100%" height="200" id="p6-svg"></svg>`;
+  const controls = document.createElement('div');
+  controls.className='viz-controls';
+  controls.innerHTML = `<button class="btn" data-a="diverge">show divergence</button><button class="btn alt" data-a="rebase">git rebase main</button><button class="btn" data-a="clear">reset scene</button>`;
+  el.after(controls);
+  const svg = document.getElementById('p6-svg');
+  function base(){
+    svg.innerHTML = `<line x1="20" y1="70" x2="460" y2="70" stroke="#163420" stroke-width="2"/>
+    <circle cx="60" cy="70" r="12" fill="#0c140d" stroke="#4dff88" stroke-width="2"/>
+    <circle cx="130" cy="70" r="12" fill="#0c140d" stroke="#4dff88" stroke-width="2"/>
+    <text x="30" y="55" class="dim-label">main</text>`;
+  }
+  base();
+  controls.addEventListener('click', e=>{
+    const a = e.target.dataset.a; if(!a) return;
+    if(a==='diverge'){
+      base();
+      svg.innerHTML += `
+      <circle cx="230" cy="70" r="12" fill="#0c140d" stroke="#4dff88" stroke-width="2" style="animation:popIn .4s ease"/>
+      <text x="230" y="55" class="dim-label">main moved on</text>
+      <line x1="130" y1="70" x2="230" y2="140" stroke="#5fc9ff" stroke-width="2" stroke-dasharray="4 3"/>
+      <circle cx="270" cy="140" r="12" fill="#0c140d" stroke="#5fc9ff" stroke-width="2"/>
+      <circle cx="330" cy="140" r="12" fill="#0c140d" stroke="#5fc9ff" stroke-width="2"/>
+      <text x="300" y="160" text-anchor="middle" class="dim-label" fill="#5fc9ff">your branch (2 commits)</text>`;
+      setCaption('p6','Both timelines moved independently since the fork point. History now looks like a Y.');
+    }
+    if(a==='rebase'){
+      svg.innerHTML += `
+      <circle cx="230" cy="70" r="12" fill="#0c140d" stroke="#4dff88" stroke-width="2"/>
+      <line x1="230" y1="70" x2="290" y2="70" stroke="#a6ffce" stroke-width="2" style="stroke-dasharray:5 4; animation:dashFlow .8s linear infinite"/>
+      <circle cx="330" cy="70" r="12" fill="#0c140d" stroke="#a6ffce" stroke-width="3" style="animation:popIn .4s ease .1s both, pulseGreen 1.2s ease infinite"/>
+      <circle cx="390" cy="70" r="12" fill="#0c140d" stroke="#a6ffce" stroke-width="3" style="animation:popIn .4s ease .3s both, pulseGreen 1.2s ease infinite"/>
+      <text x="360" y="55" text-anchor="middle" class="dim-label" fill="#a6ffce">replayed on top — straight line</text>`;
+      setCaption('p6','<b>rebase</b> replays your 2 commits as if they happened after main\'s latest — the Y becomes a straight line.');
+    }
+    if(a==='clear'){ base(); setCaption('p6','Scene reset.'); }
+  });
+})();
+
+/* ---- p7: bisect number line ---- */
+(function(){
+  const el = box('p7');
+  el.innerHTML = `<svg viewBox="0 0 480 140" width="100%" height="140" id="p7-svg"></svg>`;
+  const controls = document.createElement('div');
+  controls.className='viz-controls';
+  controls.innerHTML = `<button class="btn" data-a="step">bisect: mark & narrow</button><button class="btn" data-a="clear">reset scene</button>`;
+  el.after(controls);
+  const svg = document.getElementById('p7-svg');
+  const total = 16;
+  let lo=0, hi=total-1, found=false;
+  function render(mid){
+    let dots='';
+    for(let i=0;i<total;i++){
+      const x = 20 + i*28;
+      let color = '#163420';
+      if(i<lo) color='#4dff88';
+      else if(i>hi) color='#ff5f56';
+      if(mid!==undefined && i===mid) color='#ffb545';
+      dots += `<circle cx="${x}" cy="70" r="8" fill="${color}" ${mid===i?'style="animation:pulseGreen .8s ease infinite"':''}/>`;
+    }
+    svg.innerHTML = `<line x1="20" y1="70" x2="440" y2="70" stroke="#163420" stroke-width="1"/>${dots}
+    <text x="20" y="100" class="dim-label" fill="#4dff88">good</text>
+    <text x="440" y="100" text-anchor="end" class="dim-label" fill="#ff5f56">bad</text>`;
+  }
+  render();
+  controls.addEventListener('click', e=>{
+    const a = e.target.dataset.a; if(!a) return;
+    if(a==='step'){
+      if(found){ setCaption('p7','Culprit isolated! That commit is the first "bad" one — exactly what bisect finds.'); return; }
+      const mid = Math.floor((lo+hi)/2);
+      render(mid);
+      setTimeout(()=>{
+        // simulate: treat mid as "bad" each time, narrowing hi
+        if(hi-lo<=1){ found=true; hi=mid; lo=mid; render(mid); setCaption('p7','Culprit isolated at commit #'+(mid+1)+'! Binary search needed only a handful of steps instead of checking all 16.'); return; }
+        hi = mid; render(); setCaption('p7',`Marked commit #${mid+1} as <b>bad</b>. Search space just halved — range is now ${lo+1}–${hi+1}.`);
+      }, 500);
+    }
+    if(a==='clear'){ lo=0; hi=total-1; found=false; render(); setCaption('p7','Scene reset.'); }
+  });
+})();
+
+/* ---- p8: internals DAG ---- */
+(function(){
+  const el = box('p8');
+  el.innerHTML = `<svg viewBox="0 0 480 220" width="100%" height="220" id="p8-svg"></svg>`;
+  const controls = document.createElement('div');
+  controls.className='viz-controls';
+  controls.innerHTML = `<button class="btn" data-a="build">build object graph</button><button class="btn" data-a="clear">reset scene</button>`;
+  el.after(controls);
+  const svg = document.getElementById('p8-svg');
+  function clear(){ svg.innerHTML=''; }
+  clear();
+  controls.addEventListener('click', e=>{
+    const a = e.target.dataset.a; if(!a) return;
+    if(a==='build'){
+      svg.innerHTML = `
+      <rect x="200" y="15" width="90" height="30" rx="4" fill="none" stroke="#a6ffce" style="animation:popIn .4s ease"/>
+      <text x="245" y="34" text-anchor="middle" font-size="10" fill="#a6ffce">commit a1b2c3</text>
+
+      <line x1="245" y1="45" x2="245" y2="80" stroke="#1e6b3d" style="animation:dashFlow 1s linear infinite;stroke-dasharray:4 3"/>
+      <rect x="200" y="80" width="90" height="30" rx="4" fill="none" stroke="#5fc9ff" style="animation:popIn .4s ease .2s both"/>
+      <text x="245" y="99" text-anchor="middle" font-size="10" fill="#5fc9ff">tree (root/)</text>
+
+      <line x1="245" y1="110" x2="140" y2="150" stroke="#1e6b3d" style="animation:dashFlow 1s linear infinite;stroke-dasharray:4 3"/>
+      <line x1="245" y1="110" x2="350" y2="150" stroke="#1e6b3d" style="animation:dashFlow 1s linear infinite;stroke-dasharray:4 3"/>
+
+      <rect x="95" y="150" width="90" height="30" rx="4" fill="none" stroke="#ffb545" style="animation:popIn .4s ease .4s both"/>
+      <text x="140" y="169" text-anchor="middle" font-size="10" fill="#ffb545">blob index.js</text>
+
+      <rect x="305" y="150" width="90" height="30" rx="4" fill="none" stroke="#ffb545" style="animation:popIn .4s ease .5s both"/>
+      <text x="350" y="169" text-anchor="middle" font-size="10" fill="#ffb545">blob style.css</text>
+
+      <text x="245" y="205" text-anchor="middle" class="dim-label">unchanged files reuse the SAME blob hash next commit — nothing re-saved</text>
+      `;
+      setCaption('p8','A commit points to a tree (folder snapshot), which points to blobs (file contents). Everything is addressed by content hash.');
+    }
+    if(a==='clear'){ clear(); setCaption('p8','Scene reset.'); }
+  });
+})();
+
+/* ---- p9: submodule / worktree ---- */
+(function(){
+  const el = box('p9');
+  el.innerHTML = `<svg viewBox="0 0 480 200" width="100%" height="200" id="p9-svg">
+    <rect x="30" y="40" width="180" height="130" rx="6" fill="none" stroke="#4dff88"/>
+    <text x="120" y="30" text-anchor="middle" class="node-label" fill="#4dff88">parent repo</text>
+    <rect x="60" y="90" width="120" height="55" rx="5" fill="none" stroke="#5fc9ff" stroke-dasharray="4 3" id="p9-sub" opacity="0"/>
+    <text x="120" y="120" text-anchor="middle" font-size="10" fill="#5fc9ff" id="p9-sub-t" opacity="0">submodule</text>
+    <text x="120" y="135" text-anchor="middle" class="dim-label" id="p9-sub-t2" opacity="0">(pointer to its own repo)</text>
+
+    <rect x="280" y="40" width="80" height="130" rx="6" fill="none" stroke="#4dff88" id="p9-door1"/>
+    <text x="320" y="30" text-anchor="middle" class="dim-label">worktree A</text>
+    <text x="320" y="110" text-anchor="middle" font-size="10" fill="#4dff88">branch: main</text>
+
+    <rect x="375" y="40" width="80" height="130" rx="6" fill="none" stroke="#ffb545" id="p9-door2" opacity="0"/>
+    <text x="415" y="30" text-anchor="middle" class="dim-label" id="p9-door2-t" opacity="0">worktree B</text>
+    <text x="415" y="110" text-anchor="middle" font-size="10" fill="#ffb545" id="p9-door2-t2" opacity="0">branch: hotfix</text>
+  </svg>`;
+  const controls = document.createElement('div');
+  controls.className='viz-controls';
+  controls.innerHTML = `<button class="btn" data-a="sub">git submodule add</button><button class="btn alt" data-a="tree">git worktree add</button><button class="btn" data-a="clear">reset scene</button>`;
+  el.after(controls);
+  controls.addEventListener('click', e=>{
+    const a = e.target.dataset.a; if(!a) return;
+    const show=(id)=>{const n=document.getElementById(id); n.style.transition='opacity .5s'; n.setAttribute('opacity',1);};
+    const hide=(id)=>{document.getElementById(id).setAttribute('opacity',0);};
+    if(a==='sub'){ show('p9-sub'); show('p9-sub-t'); show('p9-sub-t2'); setCaption('p9','A submodule embeds a link to ANOTHER repo at a specific commit — not a copy, a pointer.'); }
+    if(a==='tree'){ show('p9-door2'); show('p9-door2-t'); show('p9-door2-t2'); setCaption('p9','A second worktree opens another folder pointed at a different branch of the SAME repo — edit both simultaneously.'); }
+    if(a==='clear'){ ['p9-sub','p9-sub-t','p9-sub-t2','p9-door2','p9-door2-t','p9-door2-t2'].forEach(hide); setCaption('p9','Scene reset.'); }
+  });
+})();
+
+/* ---- p10: hooks / bouncer ---- */
+(function(){
+  const el = box('p10');
+  el.innerHTML = `<svg viewBox="0 0 480 180" width="100%" height="180" id="p10-svg">
+    <rect x="20" y="65" width="120" height="45" rx="5" fill="none" stroke="#5fc9ff"/>
+    <text x="80" y="90" text-anchor="middle" font-size="10" fill="#5fc9ff">git commit</text>
+    <path d="M140 87 H210" stroke="#163420" stroke-width="2" marker-end="url(#arrow10)"/>
+    <rect x="210" y="55" width="90" height="65" rx="5" fill="none" stroke="#ffb545"/>
+    <text x="255" y="82" text-anchor="middle" font-size="10" fill="#ffb545">pre-commit</text>
+    <text x="255" y="96" text-anchor="middle" font-size="10" fill="#ffb545">hook</text>
+    <text x="255" y="110" text-anchor="middle" class="dim-label">the bouncer</text>
+    <path id="p10-path2" d="M300 87 H380" stroke="#163420" stroke-width="2" marker-end="url(#arrow10)"/>
+    <rect x="380" y="65" width="90" height="45" rx="5" fill="none" stroke="#4dff88" id="p10-repo"/>
+    <text x="425" y="90" text-anchor="middle" font-size="10" fill="#4dff88">repository</text>
+    <defs><marker id="arrow10" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#163420"/></marker></defs>
+  </svg>`;
+  const controls = document.createElement('div');
+  controls.className='viz-controls';
+  controls.innerHTML = `<button class="btn" data-a="clean">commit WITHOUT secret</button><button class="btn danger" data-a="dirty">commit WITH secret</button><button class="btn" data-a="clear">reset scene</button>`;
+  el.after(controls);
+  controls.addEventListener('click', e=>{
+    const a = e.target.dataset.a; if(!a) return;
+    const repo = document.getElementById('p10-repo');
+    if(a==='clean'){ repo.setAttribute('stroke','#4dff88'); repo.style.animation='pulseGreen 1s ease infinite'; setCaption('p10','Bouncer checks the commit, finds nothing forbidden, waves it through into the repo.'); }
+    if(a==='dirty'){ repo.style.animation=''; repo.setAttribute('stroke','#4dff88'); setCaption('p10','<b style="color:#ff5f56">BLOCKED</b> — the pre-commit hook found a forbidden keyword (e.g. an API key) and refused the commit before it ever saved.'); }
+    if(a==='clear'){ repo.style.animation=''; repo.setAttribute('stroke','#4dff88'); setCaption('p10','Scene reset.'); }
+  });
+})();
+
+/* ---- keyboard: R replays last-clicked button in view ---- */
+document.addEventListener('keydown', (e)=>{
+  if(e.key.toLowerCase()!=='r') return;
+  const visible = sections.find(s=>{
+    const r = s.getBoundingClientRect();
+    return r.top < window.innerHeight*0.6 && r.bottom > window.innerHeight*0.3;
+  });
+  if(!visible) return;
+  const controls = visible.querySelector('.viz-controls');
+  if(controls && controls.dataset.last){
+    controls.dataset.last.split(',').forEach(()=>{});
+  }
+});
+document.querySelectorAll('.viz-controls').forEach(c=>{
+  c.addEventListener('click', e=>{ if(e.target.dataset.a) c.dataset.last = e.target.dataset.a; });
+});
+</script>
+</body>
+</html>
