@@ -130,6 +130,38 @@ a{ color:var(--blue); }
 }
 @keyframes bob{ 0%,100%{transform:translate(-50%,0);} 50%{transform:translate(-50%,8px);} }
 
+/* ---------------- Odyssey house map ---------------- */
+.odyssey{ padding:4rem 0 3rem; border-bottom:1px solid var(--line); }
+.odyssey-map{ margin-top:2rem; position:relative; }
+.odyssey-track{
+  display:flex; gap:0; overflow-x:auto; padding-bottom:1.2rem; scrollbar-width:thin;
+  position:relative;
+}
+.odyssey-track::-webkit-scrollbar{ height:6px; }
+.odyssey-track::-webkit-scrollbar-thumb{ background:var(--phosphor-dim); }
+.room-stop{
+  flex:0 0 auto; width:190px; position:relative; padding:0 1.6rem 0 0;
+  display:flex; flex-direction:column; align-items:flex-start; text-align:left;
+  cursor:pointer; background:transparent; border:none; color:inherit; font-family:'Space Mono',monospace;
+}
+.room-stop::after{
+  content:"→"; position:absolute; right:0.2rem; top:22px; color:var(--phosphor-dim); font-size:1.1rem;
+}
+.room-stop:last-child::after{ content:""; }
+.room-node{
+  width:46px; height:46px; border-radius:50%; border:1px solid var(--phosphor-dim);
+  display:flex; align-items:center; justify-content:center; font-family:'VT323',monospace; font-size:1.3rem;
+  color:var(--phosphor); background:var(--panel); transition:all .2s ease; margin-bottom:0.7rem;
+}
+.room-stop:hover .room-node{ border-color:var(--phosphor); box-shadow:0 0 16px rgba(77,255,136,0.45); transform:scale(1.08); }
+.room-name{ font-family:'IBM Plex Mono',monospace; font-size:0.72rem; letter-spacing:0.05em; color:var(--amber); margin-bottom:0.3rem; }
+.room-story{ font-size:0.72rem; color:var(--ink-dim); line-height:1.4; padding-right:0.4rem; }
+.room-tag{
+  display:inline-block; margin-top:2.4rem; margin-bottom:0.5rem;
+  font-family:'IBM Plex Mono',monospace; font-size:0.68rem; letter-spacing:0.2em; text-transform:uppercase;
+  color:var(--blue); border:1px solid var(--blue); border-radius:2px; padding:0.2rem 0.55rem; opacity:0.85;
+}
+
 /* ---------- Nav rail ---------- */
 .railwrap{
   position:sticky; top:0; z-index:50;
@@ -343,6 +375,14 @@ footer .glow{ color:var(--phosphor); }
   <div class="scroll-hint">▾ scroll to begin ▾</div>
 </section>
 
+<!-- ============ THE GIT ODYSSEY: memory-palace house map ============ -->
+<section class="odyssey crt-frame" id="odyssey">
+  <span class="eyebrow">one house, one story, one command at a time</span>
+  <h2 style="margin-bottom:0.4rem;">The Git Odyssey</h2>
+  <p class="phase-desc" style="max-width:720px;">Every phase is a room in the same house, visited in one continuous walk. Each room's story hooks into the next — remember the walk, and you remember the commands. Click any room to step inside.</p>
+  <div class="odyssey-map" id="odysseyMap"></div>
+</section>
+
 <!-- ============ NAV RAIL ============ -->
 <div class="railwrap">
   <div class="rail" id="rail"></div>
@@ -379,6 +419,23 @@ const bootEl = document.getElementById('bootLog');
     setTimeout(()=>typeBoot(i+1,0), 60);
   }
 })(0,0);
+
+/* ---------------- The Git Odyssey: one house, one story-chain ---------------- */
+const HOUSE = [
+  { id:'p0',  icon:'🚪', room:'Front Door',    story:"You stand at the FRONT DOOR, showing ID (name + email) before you're let inside." },
+  { id:'p1',  icon:'🍳', room:'Kitchen',       story:"Inside, the KITCHEN — you cook (edit), plate it on a TRAY (stage), then seal a jar and shelve it (commit)." },
+  { id:'p2',  icon:'🕰️', room:'Time-Machine Closet', story:"Off the kitchen, a CLOSET with a time machine — retake the photo (amend), rip out a page (reset), or paste a correction sticker over it (revert)." },
+  { id:'p3',  icon:'🪞', room:'Hall of Mirrors', story:"Upstairs, a HALL OF MIRRORS splits into parallel corridors (branches) that can fold back into one (merge) — sometimes two mirrors show the same spot and crash (conflict)." },
+  { id:'p4',  icon:'☁️', room:'Cloud Window',  story:"A WINDOW looks out on a floating CLOUD CASTLE — you throw boxes up to it (push) or catch boxes falling down (fetch/pull)." },
+  { id:'p5',  icon:'✉️', room:'Mail Slot',     story:"By the door, a MAIL SLOT — drafts go out for the neighborhood editor's red pen (pull request review) before being nailed to the wall (merge)." },
+  { id:'p6',  icon:'🪜', room:'The Attic',     story:"Up a ladder, the ATTIC — you rearrange old furniture in a straight line (rebase), teleport one item to another room (cherry-pick), and a dusty logbook remembers every move (reflog)." },
+  { id:'p7',  icon:'🔍', room:"Detective's Study", story:"A STUDY with a magnifying glass that halves the room each search (bisect), and a drawer that hides your mess mid-case (stash)." },
+  { id:'p8',  icon:'🧱', room:'The Basement',  story:"Down in the BASEMENT, every brick (blob/tree/commit) is stamped with its own fingerprint (hash) — the foundation holding the whole house up." },
+  { id:'p9',  icon:'🚗', room:'The Garage',    story:"Out in the GARAGE, a tiny model house is bolted to the wall (submodule), and a second front door opens into the same house from a different angle (worktree)." },
+  { id:'p10', icon:'🛡️', room:'Security Desk', story:"By the exit, a SECURITY GUARD checks every parcel (hooks) and stamps it with a wax seal (signed commits) before it leaves the house." },
+  { id:'p11', icon:'🗄️', room:'Junk Drawer',   story:"One last HALLWAY DRAWER — patch letters (format-patch), a whole repo shrunk into a jar (bundle), and a notepad that remembers old arguments so it doesn't relitigate them (rerere)." },
+  { id:'p12', icon:'🧰', room:'Garage Pegboard', story:"On the garage wall, a PEGBOARD holds every tool you haven't needed yet — grab one and it lights up right in your hand." },
+];
 
 /* ---------------- Data: phases ---------------- */
 const PHASES = [
@@ -589,15 +646,34 @@ PHASES.forEach(p=>{
   rail.appendChild(b);
 });
 
+/* Odyssey house-map track */
+const houseByID = Object.fromEntries(HOUSE.map(h=>[h.id,h]));
+const trackEl = document.createElement('div');
+trackEl.className = 'odyssey-track';
+trackEl.innerHTML = HOUSE.map(h=>`
+  <button class="room-stop" data-target="${h.id}">
+    <span class="room-node">${h.icon}</span>
+    <span class="room-name">${h.room}</span>
+    <span class="room-story">${h.story}</span>
+  </button>`).join('');
+document.getElementById('odysseyMap').appendChild(trackEl);
+trackEl.addEventListener('click', e=>{
+  const stop = e.target.closest('.room-stop'); if(!stop) return;
+  document.getElementById(stop.dataset.target).scrollIntoView({behavior:'smooth', block:'start'});
+});
+
 PHASES.forEach(p=>{
   const sec = document.createElement('section');
   sec.className = 'phase';
   sec.id = p.id;
+  const h = houseByID[p.id] || {};
   sec.innerHTML = `
+    <div class="room-tag">${h.icon||''} room: ${h.room||''}</div>
     <div class="phase-head">
       <span class="phase-num">PHASE ${p.num}</span>
       <h2>${p.title}</h2>
     </div>
+    <p class="phase-desc" style="font-style:italic; color:var(--phosphor-dim);">${h.story||''}</p>
     <p class="phase-desc">${p.desc}</p>
     <div class="analogy">
       <span class="eyebrow">layman's terms</span>
@@ -709,7 +785,9 @@ const refSec = document.createElement('section');
 refSec.className = 'phase';
 refSec.id = 'p12';
 refSec.innerHTML = `
+  <div class="room-tag">🧰 room: Garage Pegboard</div>
   <div class="phase-head"><span class="phase-num">PHASE 12</span><h2>Plumbing & Power-User Reference</h2></div>
+  <p class="phase-desc" style="font-style:italic; color:var(--phosphor-dim);">On the garage wall, a PEGBOARD holds every tool you haven't needed yet — grab one and it lights up right in your hand.</p>
   <p class="phase-desc">Every command left in git's toolbox. Not daily-driver material — this is the reference wall you bookmark and come back to. <b>Click any card to run it in the terminal.</b></p>
   <div class="stage" style="align-items:stretch;">
     <div class="terminal" id="p12-terminal">
