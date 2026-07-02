@@ -476,6 +476,26 @@ const PHASES = [
       ['Conventional Commits (feat:, fix:, ...)','Scenario: want auto-generated changelogs — prefixing commit messages by type makes history machine-readable.'],
     ]
   },
+  {
+    id:'p11', num:'11', title:'Completionist — The Long Tail',
+    desc:"The rare commands: not daily-driver, but exactly what you reach for once a year and forget the syntax of every time.",
+    analogy:"If phases 0-10 were the rooms of the house, this is the junk drawer — patch files instead of live syncing (like mailing a photocopy instead of sharing the album), bundles as a repo-in-a-single-file you can hand someone on a USB stick, and rerere as git remembering how you solved a fight last time so it doesn't ask twice.",
+    viz:'longtail',
+    commands:[
+      ['git log --graph --pretty=format:"..."','Scenario: want a custom-formatted, colorized commit graph in scripts or aliases — full control over what each line shows.'],
+      ['git diff --word-diff','Scenario: one word changed in a paragraph — highlights the exact word instead of the whole line.'],
+      ['git rerere','Scenario: rebasing repeatedly hits the SAME conflict — git remembers your last resolution and reapplies it automatically.'],
+      ['git notes','Scenario: want to attach a comment ("reviewed by QA") to a commit without rewriting it — notes live alongside, not inside, the commit.'],
+      ['git archive','Scenario: need to hand someone the CODE only, no .git history — exports a clean zip/tar snapshot.'],
+      ['git bundle','Scenario: no network access, need to transfer commits — packages the repo (or a range) into one portable file.'],
+      ['git push --force-with-lease','Scenario: must force-push after a rebase, but don\'t want to clobber a teammate\'s new commits — refuses if the remote moved since you last fetched.'],
+      ['.gitattributes','Scenario: Windows/Mac line-ending chaos in a shared repo — declares how git should normalize text files, binaries, and diffs per file type.'],
+      ['git shortlog / describe','Scenario: writing release notes — shortlog summarizes commits per author, describe names the current commit relative to the nearest tag (e.g. v1.2.0-3-gabc1234).'],
+      ['git format-patch / git am','Scenario: contributing without a shared remote (email-based workflows, some kernel-style projects) — format-patch exports commits as .patch files, am applies them on the other end.'],
+      ['git worktree list / remove / prune','Scenario: cleaning up after Phase 9\'s worktree add — list shows all active worktrees, remove/prune clear out the ones you\'re done with.'],
+      ['git maintenance / repack','Scenario: a years-old repo feels sluggish — runs housekeeping (repacking objects, pruning) to keep it fast.'],
+    ]
+  },
 ];
 
 const TASKS = {
@@ -490,6 +510,7 @@ const TASKS = {
   p8:"Manually inspect .git/objects, decode a blob/tree/commit with git cat-file.",
   p9:"Add a submodule to a repo, update it, understand detached HEAD inside the submodule.",
   p10:"Set up a pre-commit hook that blocks commits with a forbidden keyword. Configure 3 custom aliases.",
+  p11:"Export the repo with git archive, generate a patch with format-patch and apply it with git am in a scratch clone, then clean up worktrees with git worktree list + prune.",
 };
 
 /* ---------------- Build nav rail + sections ---------------- */
@@ -997,6 +1018,37 @@ function box(id){ return document.getElementById('viz-'+id); }
     if(a==='clean'){ repo.setAttribute('stroke','#4dff88'); repo.style.animation='pulseGreen 1s ease infinite'; setCaption('p10','Bouncer checks the commit, finds nothing forbidden, waves it through into the repo.'); }
     if(a==='dirty'){ repo.style.animation=''; repo.setAttribute('stroke','#4dff88'); setCaption('p10','<b style="color:#ff5f56">BLOCKED</b> — the pre-commit hook found a forbidden keyword (e.g. an API key) and refused the commit before it ever saved.'); }
     if(a==='clear'){ repo.style.animation=''; repo.setAttribute('stroke','#4dff88'); setCaption('p10','Scene reset.'); }
+  });
+})();
+
+/* ---- p11: long tail — archive/bundle/patch as portable files ---- */
+(function(){
+  const el = box('p11');
+  el.innerHTML = `<svg viewBox="0 0 480 190" width="100%" height="190" id="p11-svg">
+    <rect x="20" y="70" width="120" height="55" rx="5" fill="none" stroke="#4dff88"/>
+    <text x="80" y="102" text-anchor="middle" font-size="10" fill="#4dff88">your repo</text>
+    <path d="M140 97 H200" stroke="#163420" stroke-width="2" marker-end="url(#arrow11)"/>
+    <rect x="200" y="55" width="100" height="30" rx="4" fill="none" stroke="#ffb545" id="p11-file1" opacity="0"/>
+    <text x="250" y="75" text-anchor="middle" font-size="10" fill="#ffb545" id="p11-file1-t" opacity="0">0001-fix.patch</text>
+    <rect x="200" y="105" width="100" height="30" rx="4" fill="none" stroke="#5fc9ff" id="p11-file2" opacity="0"/>
+    <text x="250" y="125" text-anchor="middle" font-size="10" fill="#5fc9ff" id="p11-file2-t" opacity="0">repo.bundle</text>
+    <path id="p11-path2" d="M300 97 H380" stroke="#163420" stroke-width="2" marker-end="url(#arrow11)" opacity="0"/>
+    <rect x="380" y="70" width="90" height="55" rx="5" fill="none" stroke="#a6ffce" id="p11-other" opacity="0"/>
+    <text x="425" y="102" text-anchor="middle" font-size="10" fill="#a6ffce" id="p11-other-t" opacity="0">other machine</text>
+    <defs><marker id="arrow11" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#163420"/></marker></defs>
+  </svg>`;
+  const controls = document.createElement('div');
+  controls.className='viz-controls';
+  controls.innerHTML = `<button class="btn" data-a="patch">format-patch</button><button class="btn alt" data-a="bundle">git bundle</button><button class="btn" data-a="apply">apply on other machine</button><button class="btn" data-a="clear">reset scene</button>`;
+  el.after(controls);
+  const show=(id)=>{const n=document.getElementById(id); n.style.transition='opacity .5s'; n.setAttribute('opacity',1);};
+  const hide=(id)=>{document.getElementById(id).setAttribute('opacity',0);};
+  controls.addEventListener('click', e=>{
+    const a = e.target.dataset.a; if(!a) return;
+    if(a==='patch'){ show('p11-file1'); show('p11-file1-t'); setCaption('p11','<b>format-patch</b> exports your commits as plain .patch text files — mailable, diffable, no git server needed.'); }
+    if(a==='bundle'){ show('p11-file2'); show('p11-file2-t'); setCaption('p11','<b>bundle</b> packs your WHOLE repo (or a commit range) into one binary file — a portable, offline clone source.'); }
+    if(a==='apply'){ show('p11-path2'); show('p11-other'); show('p11-other-t'); setCaption('p11','<b>git am</b> applies the .patch on the other machine, replaying it as real commits with original author/message intact.'); }
+    if(a==='clear'){ ['p11-file1','p11-file1-t','p11-file2','p11-file2-t','p11-path2','p11-other','p11-other-t'].forEach(hide); setCaption('p11','Scene reset.'); }
   });
 })();
 

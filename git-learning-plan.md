@@ -149,6 +149,26 @@ Learning plan. Each phase: concepts, commands to practice, mini-task.
 
 ---
 
+## Phase 11 — Completionist: The Long Tail
+
+- `git log --graph --pretty=format:"..."` custom log formatting
+- `git diff --word-diff`, `A..B` vs `A...B` range syntax
+- `git rerere` (reuse recorded conflict resolutions)
+- `git notes` (attach metadata to commits without changing them)
+- `git archive` (export a snapshot as zip/tar, no .git history)
+- `git bundle` (package repo/commits into one file for offline transfer)
+- Multiple remotes, `git push --force-with-lease` (safer force push)
+- `.gitattributes` (line endings, merge drivers, diff drivers)
+- Credential helpers, SSH vs HTTPS remote auth
+- `git shortlog` (contributor summary), `git describe` (human-readable ref name)
+- `git format-patch` / `git am` (email-style patch workflow)
+- `git worktree list / remove / prune` (full worktree lifecycle, not just add)
+- `git maintenance`, `git repack` (repo housekeeping at scale)
+
+**Task:** Export the repo with `git archive`, generate a patch with `format-patch` and apply it with `git am` in a scratch clone, then clean up worktrees with `git worktree list` + `prune`.
+
+---
+
 ## Practice Resources
 
 - learngitbranching.js.org — interactive visual practice (branching/rebase)
@@ -170,3 +190,4 @@ Learning plan. Each phase: concepts, commands to practice, mini-task.
 - [ ] Phase 8 — Internals
 - [ ] Phase 9 — Multi-repo
 - [ ] Phase 10 — Workflow Mastery
+- [ ] Phase 11 — Completionist: The Long Tail
