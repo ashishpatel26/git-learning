@@ -4,8 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Git Workbench — Learn Git by Reading the Graph</title>
-<meta name="description" content="An expert-built Git workbench with 143 command guides, a live commit graph, and 112 hands-on practice drills.">
+<meta name="description" content="An expert-built Git workbench with 143 command guides, a live commit graph, and 124 hands-on practice drills.">
 <meta name="theme-color" content="#0a0d10">
+<meta property="og:title" content="Git Workbench — Learn Git by Reading the Graph">
+<meta property="og:description" content="143 command guides, a full git simulation playground (conflicts, remotes, PRs), 124 validated drills, a story campaign, and interview prep.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://ashishpatel26.github.io/git-learning/">
+<meta name="twitter:card" content="summary">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -33,6 +38,23 @@
   --accent-remote:#58a6ff;
   --border:#29323c;
   --border-strong:#3b4652;
+}
+:root[data-theme="light"]{
+  color-scheme:light;
+  --color-text-primary:#15191d;
+  --color-text-secondary:#3d4650;
+  --color-text-tertiary:#67727d;
+  --color-text-inverse:#ffffff;
+  --color-surface-base:#f6f8fa;
+  --color-surface-muted:#e7ebef;
+  --color-surface-raised:#ffffff;
+  --surface-2:#eef1f4;
+  --surface-3:#e7ebef;
+  --accent-soft:rgba(240,81,51,.10);
+  --border:#d4dbe2;
+  --border-strong:#b9c3cd;
+}
+:root{
   --space-1:4px;
   --space-2:8px;
   --space-3:12px;
@@ -214,8 +236,12 @@ a{color:var(--accent-hover);}
 .panel-head span:last-child{color:var(--color-text-secondary);}
 .icon-stage{
   display:flex;align-items:center;justify-content:center;min-height:250px;padding:20px;cursor:default;
+  overflow-x:auto;
   background-color:#0d1116;background-image:radial-gradient(rgba(119,131,143,.16) .7px,transparent .7px);background-size:18px 18px;
 }
+.icon-stage svg{min-width:480px;}
+:root[data-theme="light"] .icon-stage{background-color:#eef1f4;}
+:root[data-theme="light"] #pgTerm{background:rgba(0,0,0,0.05)!important;}
 .icon-stage:hover svg *{animation-play-state:paused!important;}
 .icon-stage svg text{font-family:var(--font-mono);}
 .graph-caption{min-height:28px;padding:0 20px 12px;color:var(--color-text-secondary);font-size:13px;text-align:center;}
@@ -396,7 +422,7 @@ a{color:var(--accent-hover);}
           <path d="M6 7v10M8 7.5c5 0 3 3.5 8 3.5"></path>
         </svg>
       </div>
-      <div class="brand-text">Git Workbench<small>143 commands / 112 drills</small></div>
+      <div class="brand-text">Git Workbench<small>143 commands / 124 drills</small></div>
     </a>
     <div class="search-wrap">
       <label class="search-label" for="searchInput">Command index</label>
@@ -421,10 +447,20 @@ a{color:var(--accent-hover);}
         <span>workbench</span><span class="repo-slash">/</span><strong>git-learning</strong>
       </div>
       <div class="workspace-meta">
-        <span class="shortcut-hint">/ search · ← → step</span>
+        <span class="shortcut-hint">/ search · Ctrl+K jump · ← → step</span>
+        <button class="btn" id="paletteBtn" type="button" style="padding:4px 12px; font-size:12px;" aria-label="Open command palette">⌘K</button>
+        <button class="btn" id="themeBtn" type="button" style="padding:4px 12px; font-size:12px;" aria-label="Toggle light/dark theme">☀/☾</button>
         <span class="branch-chip">main</span>
       </div>
     </header>
+
+    <div id="palette" role="dialog" aria-label="Command palette" style="display:none; position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.55); backdrop-filter:blur(3px);">
+      <div style="max-width:560px; margin:12vh auto 0; background:var(--color-surface-raised); border:1px solid var(--border-strong); border-radius:14px; overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,0.5);">
+        <input id="paletteInput" type="text" placeholder="Jump to any command or page…" aria-label="Palette search"
+          style="width:100%; box-sizing:border-box; padding:16px 18px; background:transparent; border:none; border-bottom:1px solid var(--border); color:var(--color-text-primary); font-family:var(--font-mono); font-size:15px; outline:none;">
+        <div id="paletteList" style="max-height:46vh; overflow-y:auto;"></div>
+      </div>
+    </div>
 
     <main class="main" id="main">
       <div id="content"></div>
@@ -490,10 +526,14 @@ const pgLi = document.createElement('li');
 pgLi.className = 'tool-nav';
 pgLi.innerHTML = `<div class="nav-section-label">Workspaces</div>
 <button class="nav-item tool-link" id="pgNavBtn" type="button"><span class="tool-icon">&gt;_</span><span class="tool-copy"><strong>Playground</strong><small>Run commands on a live graph</small></span></button>
-<button class="nav-item tool-link" id="arenaNavBtn" type="button"><span class="tool-icon">112</span><span class="tool-copy"><strong>Practice Arena</strong><small>Validated scenario drills</small></span></button>`;
+<button class="nav-item tool-link" id="arenaNavBtn" type="button"><span class="tool-icon">124</span><span class="tool-copy"><strong>Practice Arena</strong><small>Validated scenario drills</small></span></button>
+<button class="nav-item tool-link" id="campNavBtn" type="button"><span class="tool-icon">📖</span><span class="tool-copy"><strong>Campaign</strong><small>Your First Job — 5 chapters</small></span></button>
+<button class="nav-item tool-link" id="intNavBtn" type="button"><span class="tool-icon">🃏</span><span class="tool-copy"><strong>Interview Prep</strong><small>Flashcards · quiz · concepts</small></span></button>`;
 navGroups.appendChild(pgLi);
 pgLi.querySelector('#pgNavBtn').addEventListener('click', ()=>{ renderPlayground(); setSidebar(false); window.scrollTo(0,0); });
 pgLi.querySelector('#arenaNavBtn').addEventListener('click', ()=>{ renderArena(); setSidebar(false); window.scrollTo(0,0); });
+pgLi.querySelector('#campNavBtn').addEventListener('click', ()=>{ renderCampaign(); setSidebar(false); window.scrollTo(0,0); });
+pgLi.querySelector('#intNavBtn').addEventListener('click', ()=>{ renderInterview(); setSidebar(false); window.scrollTo(0,0); });
 
 CATEGORIES.forEach((cat, ci)=>{
   const li = document.createElement('li');
@@ -926,9 +966,17 @@ const PG = {
     this.reflog = [];
     this.bisect = null;
     this.config = {};
+    this.conflict = null;
+    this.upstream = { url: null, branches: {} };
+    this.strict = false;
     this.out = [];
     this.msg = 'Fresh repo with one root commit. Type "help" for every supported command.';
     this.ok = true;
+  },
+  filesIn(chainIds){
+    const s = new Set();
+    chainIds.forEach(id=>(this.commits[id]?.files||[]).forEach(f=>s.add(f)));
+    return s;
   },
   newId(){ return 'c' + (++this.seq); },
   tip(){ return this.detached || this.branches[this.head]; },
@@ -962,9 +1010,82 @@ const PG = {
     const a0 = args[0];
     this.ok = true;
     this.out = [];
+
+    /* ---- conflict gate: while a conflict is open, only resolution-related commands run ---- */
+    if(this.conflict){
+      const allowed = /^(status|diff|log|resolve|add|commit|merge|rebase|help|clear|reset-playground)$/.test(verb);
+      const isAbort = (verb==='merge'||verb==='rebase') && args.includes('--abort');
+      const isContinue = verb==='rebase' && args.includes('--continue');
+      if(verb==='resolve'){
+        const pick = a0||'ours';
+        this.conflict.resolved = true;
+        this.workdir[this.conflict.file] = `resolved (kept ${pick})`;
+        this.staged.add(this.conflict.file);
+        this.msg = `Conflict in ${this.conflict.file} resolved — kept ${pick}. Now: git commit${this.conflict.type==='rebase'?' …or git rebase --continue':''} to finish.`;
+        this.out = [this.msg];
+        return;
+      }
+      if(verb==='add'){
+        this.conflict.resolved = true;
+        this.staged.add(this.conflict.file);
+        delete this.workdir[this.conflict.file];
+        this.workdir[this.conflict.file] = 'resolved (staged)';
+        this.msg = `${this.conflict.file} staged as resolved. Finish with: ${this.conflict.type==='rebase'?'git rebase --continue':'git commit'}.`;
+        this.out = [this.msg];
+        return;
+      }
+      if(isAbort){
+        delete this.workdir[this.conflict.file];
+        this.staged.delete(this.conflict.file);
+        this.conflict = null;
+        this.msg = `${verb} --abort: everything restored to how it was before. No harm done.`;
+        this.out = [this.msg];
+        this.logHead(verb+' --abort');
+        return;
+      }
+      if((verb==='commit' && this.conflict.resolved) || (isContinue && this.conflict.resolved)){
+        const c = this.conflict;
+        delete this.workdir[c.file];
+        this.staged.delete(c.file);
+        if(c.type==='merge'){
+          const id = this.newId();
+          this.commits[id] = { parents:[this.tip(), c.targetTip], lane:this.laneOf[this.head], merge:true, files:[c.file] };
+          this.moveTip(id);
+          this.msg = `Merge completed: conflict resolved by hand, merge commit ${id} created.`;
+        } else {
+          let base = c.ontoTip;
+          c.chain.forEach(old=>{
+            const id = old + "'";
+            this.commits[id] = { parents:[base], lane:c.lane, files:this.commits[old]?.files||[] };
+            base = id;
+          });
+          this.branches[this.head] = base;
+          this.msg = `Rebase continued: remaining commits replayed (${c.chain.map(x=>x+"'").join(', ')}).`;
+        }
+        this.conflict = null;
+        this.out = [this.msg];
+        this.logHead('conflict resolved');
+        return;
+      }
+      if(isContinue && !this.conflict.resolved){
+        this.ok=false; this.msg = `${this.conflict.file} still has conflict markers. Resolve first: resolve ours|theirs|both (or git add ${this.conflict.file}).`;
+        this.out=[this.msg]; return;
+      }
+      if(!allowed){
+        this.ok = false;
+        this.msg = `error: you need to resolve your current conflict first (${this.conflict.file}). Options: resolve ours|theirs|both → git commit, or git ${this.conflict.type} --abort.`;
+        this.out = [this.msg];
+        return;
+      }
+    }
+
     switch(verb){
       case 'commit': {
         const mMsg = raw.match(/-m\s+["']?([^"']+)["']?/);
+        if(this.strict && !line.includes('--amend')){
+          if(!mMsg && !line.includes('--allow-empty')){ this.ok=false; this.msg='Aborting commit due to empty commit message. (strict mode: use -m "msg")'; break; }
+          if(!this.staged.size && !line.includes('--allow-empty')){ this.ok=false; this.msg='nothing to commit, working tree clean (strict mode: edit a file → git add → commit)'; break; }
+        }
         if(line.includes('--amend')){
           const old = this.tip();
           const c = this.commits[old];
@@ -977,7 +1098,7 @@ const PG = {
           break;
         }
         const id = this.newId();
-        this.commits[id] = { parents: [this.tip()], lane: this.detached ? 3 : this.laneOf[this.head], msg: mMsg?.[1] };
+        this.commits[id] = { parents: [this.tip()], lane: this.detached ? 3 : this.laneOf[this.head], msg: mMsg?.[1], files: [...this.staged].map(f=>f.split(' ')[0]) };
         [...this.staged].forEach(f=>this.trackedFiles.add(f.split(' ')[0]));
         const hadStage = this.staged.size > 0;
         this.staged.forEach(f=>delete this.workdir[f]);
@@ -1051,6 +1172,34 @@ const PG = {
         if(!target0 || !this.branches[target0]){ this.ok=false; this.msg=`Usage: git merge [--no-ff|--squash] <existing-branch>`; break; }
         const target = this.branches[target0];
         if(this.isAncestor(target, this.tip())){ this.msg = `Already up to date — ${target0} is behind ${this.head}.`; break; }
+        /* conflict detection: same file touched on both diverged sides */
+        if(!this.isAncestor(this.tip(), target)){
+          const ours = this.filesIn(this.uniqueChain(this.head, target));
+          const theirsChain = [];
+          let tId = target;
+          while(tId && !this.isAncestor(tId, this.tip())){ theirsChain.push(tId); tId = (this.commits[tId]?.parents||[])[0]; }
+          const theirs = this.filesIn(theirsChain);
+          const common = [...ours].find(f=>theirs.has(f));
+          if(common){
+            this.conflict = { type:'merge', file: common, branch: target0, targetTip: target, resolved: false };
+            this.workdir[common] = 'CONFLICT ⚠';
+            this.ok = false;
+            this.out = [
+              `Auto-merging ${common}`,
+              `CONFLICT (content): Merge conflict in ${common}`,
+              'Automatic merge failed; fix conflicts and then commit the result.',
+              '',
+              `<<<<<<< HEAD (${this.head}'s version)`,
+              '=======',
+              `>>>>>>> ${target0}'s version`,
+              '',
+              'Resolve with: resolve ours | resolve theirs | resolve both — then git commit.',
+              'Or back out entirely: git merge --abort',
+            ];
+            this.msg = this.out[1];
+            break;
+          }
+        }
         if(squash){
           const id = this.newId();
           this.commits[id] = { parents: [this.tip()], lane: this.laneOf[this.head], hashLabel:'sq'+this.seq };
@@ -1092,6 +1241,28 @@ const PG = {
         const ontoTip = this.branches[a0];
         const chain = this.uniqueChain(this.head, ontoTip);
         if(!chain.length){ this.msg = `Nothing to rebase — ${this.head} is already based on ${a0}.`; break; }
+        /* conflict detection during replay */
+        {
+          const ours = this.filesIn(chain);
+          const theirsChain = [];
+          let tId = ontoTip;
+          while(tId && !this.isAncestor(tId, this.tip())){ theirsChain.push(tId); tId = (this.commits[tId]?.parents||[])[0]; }
+          const theirs = this.filesIn(theirsChain);
+          const common = [...ours].find(f=>theirs.has(f));
+          if(common){
+            this.conflict = { type:'rebase', file: common, chain, ontoTip, lane: this.laneOf[a0], resolved:false };
+            this.workdir[common] = 'CONFLICT ⚠';
+            this.ok = false;
+            this.out = [
+              `Rebasing (1/${chain.length})…`,
+              `CONFLICT (content): Merge conflict in ${common}`,
+              'error: could not apply — fix conflicts, then run "git rebase --continue".',
+              'Resolve with: resolve ours | theirs | both → git rebase --continue. Bail out: git rebase --abort.',
+            ];
+            this.msg = this.out[1];
+            break;
+          }
+        }
         let base = ontoTip;
         chain.forEach(old=>{
           const id = old + "'";
@@ -1239,9 +1410,23 @@ const PG = {
       }
       /* ----- remote ----- */
       case 'remote': {
-        if(a0==='add'){ this.remote.url = args[2] || 'https://github.com/you/repo.git'; this.remote.name = a1||'origin'; say(`Remote '${this.remote.name}' added → ${this.remote.url}`); return true; }
-        if(a0==='-v' || !a0){ say(...(this.remote.url ? [`${this.remote.name}\t${this.remote.url} (fetch)`,`${this.remote.name}\t${this.remote.url} (push)`] : ['(no remotes configured — git remote add origin <url>)'])); return true; }
-        if(a0==='remove'||a0==='rm'){ this.remote={name:null,url:null,branches:{}}; say('Remote removed.'); return true; }
+        if(a0==='add'){
+          const rn = a1||'origin', url = args[2] || `https://github.com/${rn==='upstream'?'original-project':'you'}/repo.git`;
+          if(rn==='upstream'){ this.upstream.url = url; say(`Remote 'upstream' added → ${url}`, 'Fork model active: origin = YOUR copy, upstream = the original project. Try: maintainer'); }
+          else { this.remote.url = url; this.remote.name = rn; say(`Remote '${rn}' added → ${url}`); }
+          return true;
+        }
+        if(a0==='-v' || !a0){
+          const l = [];
+          if(this.remote.url){ l.push(`${this.remote.name}\t${this.remote.url} (fetch)`, `${this.remote.name}\t${this.remote.url} (push)`); }
+          if(this.upstream.url){ l.push(`upstream\t${this.upstream.url} (fetch)`, `upstream\t${this.upstream.url} (push)`); }
+          say(...(l.length?l:['(no remotes configured — git remote add origin <url>)']));
+          return true;
+        }
+        if(a0==='remove'||a0==='rm'){
+          if(a1==='upstream') this.upstream={url:null,branches:{}}; else this.remote={name:null,url:null,branches:{}};
+          say(`Remote ${a1||''} removed.`); return true;
+        }
         say(`remote ${a0}: simulated OK.`); return true;
       }
       case 'push': {
@@ -1261,13 +1446,54 @@ const PG = {
       }
       case 'teammate': {
         if(!this.remote.url || !this.remote.branches.main){ this.ok=false; say('No remote main yet — push first, then teammates can build on it.'); return true; }
+        const who = a0 || ['alice','bob','carol'][this.rseq % 3];
         const id = 'r' + (++this.rseq);
-        this.commits[id] = { parents:[this.remote.branches.main], lane: this.laneOf.main ?? 2, remoteOnly:true };
+        this.commits[id] = { parents:[this.remote.branches.main], lane: this.laneOf.main ?? 2, remoteOnly:true, author: who };
         this.remote.branches.main = id;
-        say(`👩‍💻 A teammate pushed ${id} to origin/main.`, 'Run git fetch to see it, git pull to merge it.');
+        say(`👩‍💻 ${who} pushed ${id} to origin/main.`, 'Run git fetch to see it, git pull to merge it.');
         return true;
       }
+      case 'maintainer': {
+        if(!this.upstream.url){ this.ok=false; say('No upstream remote — this simulates the FORK workflow. First: git remote add upstream <url> && git push (to origin).'); return true; }
+        if(!this.upstream.branches.main) this.upstream.branches.main = this.branches.main;
+        const id = 'u' + (++this.rseq);
+        this.commits[id] = { parents:[this.upstream.branches.main], lane: this.laneOf.main ?? 2, remoteOnly:true, author:'maintainer' };
+        this.upstream.branches.main = id;
+        say(`🧙 The upstream maintainer merged ${id} into upstream/main.`, 'Fork-sync flow: git fetch upstream → git rebase upstream/main → git push --force (to YOUR origin).');
+        return true;
+      }
+      case 'pr': {
+        if(a0==='create'){
+          const br = this.detached ? null : this.head;
+          if(!br || br==='main'){ this.ok=false; say('PRs come from feature branches — switch to one first.'); return true; }
+          if(!this.remote.branches[br]){ this.ok=false; say(`origin/${br} doesn't exist yet — push the branch first: git push`); return true; }
+          this.pr = { branch: br, tip: this.remote.branches[br] };
+          say(`📬 Pull Request opened: ${br} → main (at ${this.pr.tip}).`, 'Reviewers comment… approve with: pr merge');
+          return true;
+        }
+        if(a0==='merge'){
+          if(!this.pr){ this.ok=false; say('No open PR — pr create first.'); return true; }
+          const src = this.pr.tip;
+          const rMain = this.remote.branches.main || this.branches.main;
+          const id = 'M' + (++this.rseq);
+          this.commits[id] = { parents:[rMain, src], lane: this.laneOf.main ?? 2, remoteOnly:true, merge:true };
+          this.remote.branches.main = id;
+          const pb = this.pr.branch;
+          this.pr = null;
+          say(`🎉 PR merged on the server: origin/main now at ${id}.`, `Locally you're behind now — git pull on main, then delete the branch: git branch -d ${pb}.`);
+          return true;
+        }
+        this.ok=false; say('pr subcommands: create, merge'); return true;
+      }
       case 'fetch': {
+        if(a0==='upstream'){
+          if(!this.upstream.url){ this.ok=false; say('No upstream remote — git remote add upstream <url>'); return true; }
+          this.fetched = true;
+          this._upFetched = true;
+          const ub = Object.entries(this.upstream.branches);
+          say(ub.length ? `Fetched upstream: ${ub.map(([b,id])=>`upstream/${b} → ${id}`).join(', ')}` : 'Fetched upstream — nothing new yet (try: maintainer).');
+          return true;
+        }
         if(!this.remote.url){ this.ok=false; say('No remote configured.'); return true; }
         const news = Object.entries(this.remote.branches).filter(([b,id])=>this.commits[id]?.remoteOnly);
         this.fetched = true;
@@ -1437,7 +1663,8 @@ const PG = {
           'combine: git merge [--no-ff|--squash] <x> · git rebase <x> · git rebase -i HEAD~n · git cherry-pick <id>',
           'undo: git reset [--soft|--mixed|--hard] HEAD~n · git revert HEAD · git reflog',
           'stash: git stash [push|pop|apply|list|drop|clear]',
-          'remote: git remote add origin <url> · git push [--force] · git fetch · git pull · teammate (!)',
+          'remote: git remote add origin|upstream <url> · git push [--force] · git fetch [upstream] · git pull · teammate [name] · maintainer · pr create/merge',
+          'conflicts: cause one by editing the SAME file on two branches, then merge — resolve ours|theirs|both → git commit · git merge/rebase --abort · git rebase --continue',
           'inspect: git log [--oneline|--graph] · show · diff [--staged] · blame <f> · describe · shortlog · merge-base a b',
           'find bug: git bisect start → good/bad → reset',
           'tags: git tag [name|-d name]',
@@ -1451,7 +1678,7 @@ const PG = {
   },
   reachable(){
     const reach = new Set();
-    const stack = [...Object.values(this.branches), ...Object.values(this.tags), ...Object.values(this.remote?.branches||{}), this.detached].filter(Boolean);
+    const stack = [...Object.values(this.branches), ...Object.values(this.tags), ...Object.values(this.remote?.branches||{}), ...Object.values(this.upstream?.branches||{}), this.detached].filter(Boolean);
     while(stack.length){
       const id = stack.pop();
       if(!id || reach.has(id)) continue; reach.add(id);
@@ -1484,13 +1711,42 @@ const PG = {
       refs.push({ name, node: id, color: name==='main' ? GC.main : GC.feat, below: false });
     });
     refs.push({ name: this.detached ? 'HEAD ⚠detached' : 'HEAD', node: this.tip(), color: this.detached ? GC.danger : GC.warn, below: true });
+    if(this.conflict) refs.push({ name: `⚠ CONFLICT: ${this.conflict.file}`, node: this.tip(), color: GC.danger, below: false });
     Object.entries(this.tags).forEach(([name, id])=>{
       refs.push({ name: '🏷 '+name, node: id, color: GC.warn, below: true });
     });
     if(fetched) Object.entries(this.remote.branches||{}).forEach(([name, id])=>{
       if(nodes.find(n=>n.id===id)) refs.push({ name: 'origin/'+name, node: id, color: GC.ink, below: name!=='main' });
     });
-    return { nodes, edges, refs, remoteBox: fetched && Object.keys(this.remote.branches||{}).length > 0 };
+    if(fetched) Object.entries(this.upstream?.branches||{}).forEach(([name, id])=>{
+      if(nodes.find(n=>n.id===id)) refs.push({ name: 'upstream/'+name, node: id, color: GC.danger, below: true });
+    });
+    return { nodes, edges, refs, remoteBox: fetched && (Object.keys(this.remote.branches||{}).length > 0 || Object.keys(this.upstream?.branches||{}).length > 0) };
+  },
+  save(){
+    return JSON.stringify({
+      seq:this.seq, rseq:this.rseq, commits:this.commits, branches:this.branches, laneOf:this.laneOf,
+      nextLane:this.nextLane, head:this.head, detached:this.detached, tags:this.tags, workdir:this.workdir,
+      staged:[...this.staged], tracked:[...this.trackedFiles], stash:this.stash, remote:this.remote,
+      upstream:this.upstream, reflog:this.reflog.slice(0,20), config:this.config, fetched:!!this.fetched,
+      conflict:this.conflict, pr:this.pr||null,
+    });
+  },
+  load(json){
+    try{
+      const s = JSON.parse(json);
+      this.reset();
+      Object.assign(this, {
+        seq:s.seq, rseq:s.rseq, commits:s.commits, branches:s.branches, laneOf:s.laneOf, nextLane:s.nextLane,
+        head:s.head, detached:s.detached, tags:s.tags, workdir:s.workdir, stash:s.stash, remote:s.remote,
+        upstream:s.upstream||{url:null,branches:{}}, reflog:s.reflog||[], config:s.config||{}, fetched:s.fetched,
+        conflict:s.conflict||null, pr:s.pr||null,
+      });
+      this.staged = new Set(s.staged||[]);
+      this.trackedFiles = new Set(s.tracked||[]);
+      this.msg = 'Session restored.';
+      return true;
+    }catch(e){ this.reset(); return false; }
   },
   hud(){
     const chips = [];
@@ -1501,6 +1757,8 @@ const PG = {
     if(this.remote.url) chips.push(['☁ origin', Object.entries(this.remote.branches).map(([b,id])=>`${b}@${id}`).join(' ') || '(empty)']);
     if(this.detached) chips.push(['⚠ detached HEAD', this.detached]);
     if(this.bisect) chips.push(['🔍 bisecting', `${this.bisect.hi-this.bisect.lo} commits left`]);
+    if(this.conflict) chips.push(['🔥 conflict', `${this.conflict.file} (${this.conflict.type})${this.conflict.resolved?' — resolved, commit to finish':''}`]);
+    if(this.upstream.url) chips.push(['⬆ upstream', Object.entries(this.upstream.branches).map(([b,id])=>`${b}@${id}`).join(' ') || '(empty)']);
     return chips;
   },
 };
@@ -1775,11 +2033,307 @@ function buildArena(){
     `Commit several times, branch, commit more, merge back. Any path works — reach 8 commits + a merge.`,
     'A realistic week of history, built by hand.');
 
+  /* --- conflicts (8) --- */
+  const conflictSetup = (f)=>['edit '+f,'git add .','git commit -m "base"','git branch feature','git switch feature','edit '+f,'git add .','git commit -m "theirs"','git switch main','edit '+f,'git add .','git commit -m "ours"'];
+  [['app.js','both of you edited the same function'],['config.yml','the deploy config changed on both sides'],
+   ['README.md','both branches rewrote the intro'],['index.html','the landing page diverged']
+  ].forEach(([f,story])=>add(A, `Resolve a merge conflict in ${f}`, `Scenario: ${story} — git can't pick a winner, YOU must.`,
+    conflictSetup(f),
+    r=>!r.conflict && twoParents(r),
+    `<code>git merge feature</code> → it conflicts → <code>resolve ours</code> (or theirs/both) → <code>git commit</code>.`,
+    'Conflict resolved by hand — the merge commit records YOUR decision.'));
+  add(A,'Abort a scary merge','Scenario: the conflict looks wrong — you want OUT with zero changes.',
+    conflictSetup('core.js'),
+    r=>{ if(!r._triedMerge && r.conflict) r._triedMerge = true; return r._triedMerge===true && !r.conflict && !twoParents(r); },
+    `<code>git merge feature</code> → conflict appears → <code>git merge --abort</code>.`,
+    'Everything back exactly as it was — abort is always safe.');
+  add(A,'Resolve a REBASE conflict','Scenario: rebasing your branch hits the same-file problem — finish the rebase anyway.',
+    [...conflictSetup('api.js').slice(0,-3), 'edit api.js','git add .','git commit -m "ours"','git switch feature'],
+    r=>String(r.branches.feature||'').includes("'") && !r.conflict,
+    `<code>git rebase main</code> → conflict → <code>resolve theirs</code> → <code>git rebase --continue</code>.`,
+    'Rebase completed after manual resolution — commits replayed with new ids.');
+  add(A,'Keep both sides','Scenario: both edits are valid — the resolution should include both.',
+    conflictSetup('styles.css'),
+    r=>!r.conflict && twoParents(r),
+    `<code>git merge feature</code> → <code>resolve both</code> → <code>git commit</code>.`,
+    '"Both" is a legitimate resolution — conflicts aren\'t always either/or.');
+  add(A,'Two conflicts in one day','Scenario: resolve a merge conflict, then make one more clean commit on top.',
+    conflictSetup('db.js'),
+    r=>{ if(!twoParents(r)){ const t=r.branches.main; const c=r.commits[t]; return c && c.parents.length===1 && (r.commits[c.parents[0]]?.parents||[]).length===2 && !r.conflict; } return false; },
+    `Resolve the merge (resolve → commit), then <code>git commit</code> once more.`,
+    'Conflict handled AND work continued — a normal Tuesday.');
+
+  /* --- fork workflow (4) --- */
+  add(A,'Open your first PR','Scenario: your feature is pushed — open a pull request against main.',
+    ['git commit','git switch -c feature','git commit','git push'],
+    r=>!!r.pr,
+    `You're on feature and it's pushed — <code>pr create</code>.`,
+    'PR open: the review conversation starts on the server.');
+  add(A,'Ship a PR end-to-end','Scenario: push your branch, open the PR, and merge it on the server.',
+    ['git commit','git switch -c feature','git commit'],
+    r=>!r.pr && Object.values(r.remote.branches||{}).some(id=>r.commits[id]?.merge),
+    `<code>git push</code> → <code>pr create</code> → <code>pr merge</code>.`,
+    'The full PR lifecycle: branch → push → review → server-side merge.');
+  add(A,'Set up the fork model','Scenario: contributing to someone else\'s project — you need BOTH remotes.',
+    ['git commit','git push'],
+    r=>!!r.upstream.url && !!r.remote.url,
+    `<code>git remote add upstream https://github.com/original/repo.git</code> (origin already exists).`,
+    'origin = your fork, upstream = the original. The OSS contribution setup.');
+  add(A,'Sync your fork','Scenario: the maintainer merged new work upstream — fetch it so you can see it.',
+    ['git commit','git push','git remote add upstream https://github.com/orig/repo.git','maintainer'],
+    r=>r._upFetched===true,
+    `<code>git fetch upstream</code> — see what the maintainer merged.`,
+    'Fork synced: you can now rebase onto upstream/main and push to YOUR origin.');
+
   return E;
 }
 const ARENA = buildArena();
 const ARENA_KEY = 'git-arena-done';
 const arenaDone = ()=> JSON.parse(localStorage.getItem(ARENA_KEY) || '{}');
+
+/* ============================================================
+   CAMPAIGN — "Your First Job": 5 chapters of sequenced drills
+   ============================================================ */
+const CAMPAIGN = [
+  { icon:'🌱', title:'Day 1 — Save Your Work',
+    story:'First day at Hexagon Labs. Your onboarding buddy says: "Rule one — commit early, commit often. Lose work here and nobody can help you."',
+    pick: e => /^Make \d+ commit/.test(e.title) || /^Tag the release/.test(e.title) },
+  { icon:'🌿', title:'Week 1 — Parallel Worlds',
+    story:'Your first real ticket. The senior dev warns: "Never work directly on main. Branch, always branch. Main is sacred."',
+    pick: e => /^Create a branch|^Create AND switch|^Do \d+ commit|^Work on .*, then return/.test(e.title) },
+  { icon:'🤝', title:'Month 1 — Joining Forces',
+    story:'The team ships weekly. Now your branches have to come back together with everyone else\'s — cleanly.',
+    pick: e => /^Fast-forward merge|^Three-way merge|^Sync .* with main|^Open your first PR|^Ship a PR/.test(e.title) },
+  { icon:'🔥', title:'The Incident — Undo Under Pressure',
+    story:'3 AM. Production is down. The bad commit is in. Everyone is watching. This chapter is why they pay you.',
+    pick: e => /^Throw away the last|^Undo the last commit|^Resolve a merge conflict|^Abort a scary merge|^Keep both sides|^Rescue with revert/.test(e.title) },
+  { icon:'🧙', title:'The Refactor — History Surgeon',
+    story:'You\'ve earned trust. Now the hard stuff: rewriting history without breaking anyone, moving commits between timelines, keeping it all linear.',
+    pick: e => /^Rebase |^Cherry-pick|^Resolve a REBASE|^Wrong branch|^Stack two branches|^The hotfix flow|^Release: merge|^Fork, diverge/.test(e.title) },
+].map(ch => ({ ...ch, drills: ARENA.filter(ch.pick).map(e=>e.id) }));
+
+function chapterDone(ci){
+  const done = arenaDone();
+  return CAMPAIGN[ci].drills.every(id=>done[id]);
+}
+function chapterUnlocked(ci){ return ci===0 || chapterDone(ci-1); }
+
+let drillReturn = null; /* 'campaign' | null */
+
+function renderCampaign(){
+  document.onkeydown = null;
+  document.querySelectorAll('.nav-item').forEach(b=>b.removeAttribute('aria-current'));
+  const cbtn = document.getElementById('campNavBtn');
+  if(cbtn) cbtn.setAttribute('aria-current','true');
+  const done = arenaDone();
+  const allDone = CAMPAIGN.every((_,i)=>chapterDone(i));
+  contentEl.innerHTML = `
+    <header class="command-header">
+      <nav class="crumb" aria-label="Breadcrumb"><span>Workbench</span><span class="sep">/</span><span class="cur">Campaign</span></nav>
+      <h1 class="cmd-title">Your First Job — a git story campaign</h1>
+    </header>
+    <div class="cat-context" style="margin-bottom:24px;">
+      <div class="eyebrow">how it works</div>
+      <p>Five chapters, one career. Finish every drill in a chapter to unlock the next. Progress is shared with the Practice Arena.${allDone ? ' <b>All chapters complete — claim your certificate below!</b>':''}</p>
+    </div>
+    ${CAMPAIGN.map((ch,ci)=>{
+      const unlocked = chapterUnlocked(ci);
+      const doneCount = ch.drills.filter(id=>done[id]).length;
+      const pct = Math.round(doneCount/ch.drills.length*100);
+      return `
+      <section class="panel" style="margin-bottom:16px; ${unlocked?'':'opacity:0.45;'}">
+        <div class="panel-head"><span>${ch.icon} Chapter ${ci+1} — ${ch.title.split('— ')[1]||ch.title}</span><span>${unlocked ? `${doneCount}/${ch.drills.length}` : '🔒 locked'}</span></div>
+        <div style="padding:16px 20px;">
+          <p style="margin:0 0 12px; color:var(--color-text-secondary); font-size:14px; font-style:italic;">${ch.story}</p>
+          <div style="height:6px; border-radius:999px; background:rgba(255,255,255,0.06); overflow:hidden; margin-bottom:12px;">
+            <div style="height:100%; width:${pct}%; background:linear-gradient(90deg,var(--accent),var(--accent-2));"></div>
+          </div>
+          ${unlocked ? `<div class="btn-row">${ch.drills.map((id,k)=>
+            `<button class="btn ${done[id]?'':''}" data-cdrill="${id}" style="${done[id]?'border-color:var(--accent-2); color:var(--accent-2);':''}">${done[id]?'✓':''} ${k+1}. ${ARENA[id].title}</button>`).join('')}</div>`
+          : `<p style="margin:0; color:var(--color-text-tertiary); font-size:13px;">Finish Chapter ${ci} to unlock.</p>`}
+        </div>
+      </section>`;
+    }).join('')}
+    ${allDone ? `
+    <section class="panel" style="border-color:var(--accent-2);">
+      <div class="panel-head" style="color:var(--accent-2);"><span>🏆 Certificate of Completion</span><span></span></div>
+      <div style="padding:16px 20px;">
+        <div class="command-bar" style="margin-bottom:12px;">
+          <input class="search-input" id="certName" type="text" placeholder="Your name" aria-label="Name for certificate" style="flex:1;">
+          <button class="btn primary" id="certBtn" type="button">Download certificate</button>
+        </div>
+      </div>
+    </section>` : ''}
+  `;
+  contentEl.querySelectorAll('[data-cdrill]').forEach(el=>{
+    el.addEventListener('click', ()=>{ drillReturn='campaign'; renderDrill(parseInt(el.dataset.cdrill,10)); window.scrollTo(0,0); });
+  });
+  const certBtn = document.getElementById('certBtn');
+  if(certBtn) certBtn.addEventListener('click', ()=>{
+    const name = (document.getElementById('certName').value || 'A Git Hero').slice(0,40);
+    const cv = document.createElement('canvas'); cv.width=1000; cv.height=640;
+    const c = cv.getContext('2d');
+    c.fillStyle='#07070d'; c.fillRect(0,0,1000,640);
+    c.strokeStyle='#5eead4'; c.lineWidth=4; c.strokeRect(24,24,952,592);
+    c.strokeStyle='#f05133'; c.lineWidth=1.5; c.strokeRect(36,36,928,568);
+    c.fillStyle='#5eead4'; c.font='700 22px monospace'; c.textAlign='center';
+    c.fillText('GIT WORKBENCH — CAMPAIGN COMPLETE', 500, 120);
+    c.fillStyle='#fafafa'; c.font='700 52px Georgia'; c.fillText(name, 500, 260);
+    c.fillStyle='#a1a1aa'; c.font='18px monospace';
+    c.fillText('completed all five chapters of "Your First Job"', 500, 320);
+    c.fillText('commits · branches · merges · conflicts · rebases · pull requests', 500, 355);
+    c.fillStyle='#fbbf24'; c.font='700 20px monospace';
+    c.fillText('🏆 ' + new Date().toLocaleDateString(), 500, 430);
+    c.fillStyle='#f05133'; c.font='700 26px monospace'; c.fillText('⎇', 500, 500);
+    const a=document.createElement('a'); a.download='git-workbench-certificate.png'; a.href=cv.toDataURL('image/png'); a.click();
+  });
+  history.replaceState(null, '', '#campaign');
+}
+
+/* ============================================================
+   INTERVIEW PREP — flashcards (Leitner), quiz, concept Q&A
+   ============================================================ */
+const CONCEPT_QA = [
+  ['merge vs rebase','Merge preserves both histories and adds a two-parent merge commit — truthful but tangled. Rebase replays your commits on top of the target with NEW hashes — linear but rewritten. Rule: rebase private branches, merge shared ones.'],
+  ['reset vs revert','Reset MOVES a branch pointer backwards — the commits vanish from history (reflog still knows). Revert ADDS a new commit that cancels an old one — history stays intact. Shared branch ⇒ always revert.'],
+  ['fetch vs pull','Fetch downloads new remote history but touches nothing of yours. Pull = fetch + merge (or rebase) into your current branch. Fetch is always safe; pull changes your files.'],
+  ['git add vs commit','add stages (loads the tray); commit snapshots the tray permanently. Two steps so you can compose a commit from PART of your changes.'],
+  ['branch vs tag','Both are labels on commits. A branch MOVES when you commit; a tag NEVER moves. Branches are for work, tags are for milestones.'],
+  ['HEAD vs main','main is a branch label. HEAD is "where you are standing" — usually attached to a branch, but detached when you checkout a raw commit.'],
+  ['soft vs mixed vs hard reset','All three move the branch pointer. --soft keeps changes staged; --mixed (default) keeps them unstaged in the working dir; --hard discards them entirely.'],
+  ['clone vs fork','Clone copies a repo to your machine (git operation). Fork copies it to YOUR server account (platform operation) — you then clone your fork and PR back upstream.'],
+  ['fast-forward vs 3-way merge','If the target hasn\'t moved since you branched, git just slides the pointer forward (no merge commit). If both sides moved, git builds a two-parent merge commit from the common ancestor.'],
+  ['stash vs commit','Both save work, but stash is a scratch shelf (no history, easily dropped) for interruptions; commit is permanent history. Never let real work live only in a stash.'],
+  ['cherry-pick vs merge','Merge brings a whole branch. Cherry-pick copies ONE commit onto your branch (new hash) — surgical, but creates duplicate commits if the branch merges later.'],
+  ['amend vs new commit','Amend REPLACES the last commit (new hash) — perfect before pushing, dangerous after. A new commit appends — always safe.'],
+];
+const FLASH_KEY = 'git-flash-boxes';
+
+function renderInterview(){
+  document.onkeydown = null;
+  document.querySelectorAll('.nav-item').forEach(b=>b.removeAttribute('aria-current'));
+  const ibtn = document.getElementById('intNavBtn');
+  if(ibtn) ibtn.setAttribute('aria-current','true');
+  const boxes = JSON.parse(localStorage.getItem(FLASH_KEY) || '{}');
+  /* deck: all commands, lower Leitner box first */
+  const deck = ALL.map((it,i)=>({ i, cmd: it.cmd, sc: it.scenario, box: boxes[i]||0 }))
+    .sort((a,b)=> a.box - b.box || Math.random()-0.5);
+  const mastered = deck.filter(d=>d.box>=2).length;
+  let di = 0, flipped = false;
+
+  contentEl.innerHTML = `
+    <header class="command-header">
+      <nav class="crumb" aria-label="Breadcrumb"><span>Workbench</span><span class="sep">/</span><span class="cur">Interview prep</span></nav>
+      <h1 class="cmd-title">Interview Prep</h1>
+    </header>
+    <div class="btn-row" style="margin-bottom:20px;" role="tablist">
+      <button class="btn primary" data-tab="cards" role="tab">🃏 Flashcards</button>
+      <button class="btn" data-tab="quiz" role="tab">❓ Quiz</button>
+      <button class="btn" data-tab="qa" role="tab">⚖ Explain the difference</button>
+    </div>
+    <div id="tabCards">
+      <div class="cat-context" style="margin-bottom:16px;">
+        <div class="eyebrow">spaced repetition</div>
+        <p><b>${mastered}/${deck.length}</b> mastered. Scenario on the front — recall the command, flip, then grade yourself. "Again" resets the card; "Got it" promotes it (2 promotions = mastered).</p>
+      </div>
+      <section class="panel" style="margin-bottom:12px;">
+        <div class="panel-head"><span>Card</span><span id="fcPos"></span></div>
+        <button id="fcCard" type="button" style="all:unset; box-sizing:border-box; display:block; width:100%; min-height:170px; padding:28px 24px; cursor:pointer; text-align:center;">
+          <div id="fcFront" style="font-size:16px; color:var(--color-text-primary); line-height:1.6;"></div>
+          <div id="fcBack" style="display:none; font-family:var(--font-mono); font-size:20px; color:var(--accent-2); margin-top:10px;"></div>
+          <div style="margin-top:14px; font-size:12px; color:var(--color-text-tertiary);">(click to flip)</div>
+        </button>
+      </section>
+      <div class="btn-row">
+        <button class="btn" id="fcAgain" type="button">↻ Again</button>
+        <button class="btn primary" id="fcGood" type="button">✓ Got it</button>
+        <button class="btn" id="fcSkip" type="button">Skip →</button>
+      </div>
+    </div>
+    <div id="tabQuiz" style="display:none;">
+      <section class="panel" style="margin-bottom:12px;">
+        <div class="panel-head"><span>Which command does this?</span><span id="qzScore">0 / 0</span></div>
+        <div style="padding:20px 24px;">
+          <p id="qzQ" style="font-size:15px; color:var(--color-text-primary); margin:0 0 16px;"></p>
+          <div class="btn-row" id="qzOpts" style="flex-direction:column; align-items:stretch;"></div>
+          <p id="qzFb" style="margin:12px 0 0; font-size:13px; min-height:1.4em;"></p>
+        </div>
+      </section>
+      <div class="btn-row"><button class="btn primary" id="qzNext" type="button">Next question →</button></div>
+    </div>
+    <div id="tabQA" style="display:none;">
+      ${CONCEPT_QA.map(([q,a],i)=>`
+        <section class="panel" style="margin-bottom:10px;">
+          <button type="button" data-qa="${i}" style="all:unset; box-sizing:border-box; display:flex; justify-content:space-between; width:100%; padding:14px 20px; cursor:pointer; font-weight:600; color:var(--color-text-primary);">
+            <span>${q}</span><span style="color:var(--color-text-tertiary);">▾</span>
+          </button>
+          <div id="qaBody${i}" style="display:none; padding:0 20px 16px; color:var(--color-text-secondary); font-size:14px; line-height:1.65;">${a}</div>
+        </section>`).join('')}
+    </div>
+  `;
+
+  /* tabs */
+  contentEl.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click', ()=>{
+    contentEl.querySelectorAll('[data-tab]').forEach(x=>x.classList.remove('primary'));
+    b.classList.add('primary');
+    document.getElementById('tabCards').style.display = b.dataset.tab==='cards'?'':'none';
+    document.getElementById('tabQuiz').style.display = b.dataset.tab==='quiz'?'':'none';
+    document.getElementById('tabQA').style.display = b.dataset.tab==='qa'?'':'none';
+  }));
+
+  /* flashcards */
+  const front = document.getElementById('fcFront'), back = document.getElementById('fcBack'), pos = document.getElementById('fcPos');
+  function showCard(){
+    const c = deck[di % deck.length];
+    front.textContent = c.sc.replace(/^Scenario:\s*/,'');
+    back.textContent = c.cmd;
+    back.style.display = 'none'; flipped = false;
+    pos.textContent = `${(di % deck.length)+1} / ${deck.length} · box ${c.box}`;
+  }
+  document.getElementById('fcCard').addEventListener('click', ()=>{ flipped=!flipped; back.style.display = flipped?'block':'none'; });
+  function grade(good){
+    const c = deck[di % deck.length];
+    c.box = good ? Math.min(2, c.box+1) : 0;
+    boxes[c.i] = c.box;
+    localStorage.setItem(FLASH_KEY, JSON.stringify(boxes));
+    di++; showCard();
+  }
+  document.getElementById('fcAgain').addEventListener('click', ()=>grade(false));
+  document.getElementById('fcGood').addEventListener('click', ()=>grade(true));
+  document.getElementById('fcSkip').addEventListener('click', ()=>{ di++; showCard(); });
+  showCard();
+
+  /* quiz */
+  let qScore = 0, qTotal = 0, qAnswer = null;
+  const qzQ = document.getElementById('qzQ'), qzOpts = document.getElementById('qzOpts'), qzFb = document.getElementById('qzFb'), qzScore = document.getElementById('qzScore');
+  function nextQ(){
+    qzFb.textContent = '';
+    const correct = ALL[Math.floor(Math.random()*ALL.length)];
+    const cat = CATEGORIES[correct.catIndex] || CATEGORIES[0];
+    const pool = [...new Set([...cat.items.map(it=>it[0]), ...ALL.slice(0,30).map(a=>a.cmd)])].filter(c=>c!==correct.cmd);
+    const opts = [correct.cmd, ...pool.sort(()=>Math.random()-0.5).slice(0,3)].sort(()=>Math.random()-0.5);
+    qAnswer = correct.cmd;
+    qzQ.textContent = correct.scenario.replace(/^Scenario:\s*/,'');
+    qzOpts.innerHTML = opts.map(o=>`<button class="btn" type="button" data-opt="${o.replace(/"/g,'&quot;')}" style="text-align:left; font-family:var(--font-mono);">${o}</button>`).join('');
+  }
+  qzOpts.addEventListener('click', e=>{
+    const b = e.target.closest('[data-opt]'); if(!b || qzFb.textContent) return;
+    qTotal++;
+    if(b.dataset.opt === qAnswer){ qScore++; qzFb.textContent = '✅ Correct!'; qzFb.style.color = 'var(--accent-2)'; b.style.borderColor='var(--accent-2)'; }
+    else { qzFb.textContent = `❌ It was: ${qAnswer}`; qzFb.style.color = 'var(--accent-danger)'; b.style.borderColor='var(--accent-danger)'; }
+    qzScore.textContent = `${qScore} / ${qTotal}`;
+  });
+  document.getElementById('qzNext').addEventListener('click', nextQ);
+  nextQ();
+
+  /* qa accordions */
+  contentEl.querySelectorAll('[data-qa]').forEach(b=>b.addEventListener('click', ()=>{
+    const el = document.getElementById('qaBody'+b.dataset.qa);
+    el.style.display = el.style.display==='none' ? 'block' : 'none';
+  }));
+
+  history.replaceState(null, '', '#interview');
+}
 
 function renderArena(activeLevel='Beginner'){
   document.onkeydown = null;
@@ -1869,7 +2423,10 @@ function renderDrill(idx){
       </div>
     </section>
   `;
-  document.getElementById('backToArena').addEventListener('click', ()=>renderArena(ex.level));
+  document.getElementById('backToArena').addEventListener('click', ()=>{
+    if(drillReturn==='campaign'){ drillReturn=null; renderCampaign(); }
+    else renderArena(ex.level);
+  });
   document.getElementById('exNext').addEventListener('click', ()=>{ renderDrill((idx+1)%ARENA.length); window.scrollTo(0,0); });
   const stage = document.getElementById('exStage');
   const msgEl = document.getElementById('exMsg');
@@ -1930,6 +2487,15 @@ function renderPlayground(){
       <section class="panel graph-panel">
         <div class="panel-head"><span>Live commit graph</span><span id="pgStatus">Ready</span></div>
         <div class="icon-stage" id="pgStage"></div>
+        <div id="pgConflict" style="display:none; margin:0 20px 12px; padding:12px 14px; border:1px solid var(--accent-danger); border-radius:10px; background:rgba(248,113,113,0.08);">
+          <div style="font-family:var(--font-mono); font-size:12px; color:var(--accent-danger); margin-bottom:8px;" id="pgConflictTxt"></div>
+          <div class="btn-row">
+            <button class="btn" data-res="ours" type="button">Keep ours (HEAD)</button>
+            <button class="btn" data-res="theirs" type="button">Keep theirs</button>
+            <button class="btn" data-res="both" type="button">Keep both</button>
+            <button class="btn" data-res="abort" type="button">✕ Abort</button>
+          </div>
+        </div>
         <div id="pgHud" style="display:flex; flex-wrap:wrap; gap:8px; padding:0 20px 10px;"></div>
         <div class="command-bar">
           <span class="command-prompt" aria-hidden="true">$</span>
@@ -1938,7 +2504,14 @@ function renderPlayground(){
           aria-label="Git command input">
           <button class="btn primary" id="pgRun" type="button">Run</button>
         </div>
-        <div id="pgTerm" role="log" aria-live="polite" style="max-height:220px; overflow-y:auto; margin:0 20px 20px; padding:12px 14px; border:1px solid var(--border); border-radius:10px; background:rgba(0,0,0,0.35); font-family:var(--font-mono); font-size:12px; line-height:1.7; color:var(--color-text-secondary);"></div>
+        <div id="pgTerm" role="log" aria-live="polite" style="max-height:220px; overflow-y:auto; margin:0 20px 12px; padding:12px 14px; border:1px solid var(--border); border-radius:10px; background:rgba(0,0,0,0.35); font-family:var(--font-mono); font-size:12px; line-height:1.7; color:var(--color-text-secondary);"></div>
+        <div class="btn-row" style="padding:0 20px 20px;">
+          <label style="display:inline-flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:12px; color:var(--color-text-tertiary); cursor:pointer;">
+            <input type="checkbox" id="pgStrict"> strict mode (real git errors)
+          </label>
+          <button class="btn" id="pgShare" type="button">🔗 Copy share link</button>
+          <button class="btn" id="pgPng" type="button">🖼 Export PNG</button>
+        </div>
       </section>
       <aside class="playground-aside" aria-label="Playground guide">
         <div class="cat-context">
@@ -1962,12 +2535,26 @@ function renderPlayground(){
   const status = document.getElementById('pgStatus');
   const histBuf = [];
   let histIdx = -1;
+  const conflictBox = document.getElementById('pgConflict');
+  const conflictTxt = document.getElementById('pgConflictTxt');
   function refresh(){
     drawGraph(stage, PG.toStep());
-    status.textContent = PG.detached ? `HEAD detached @ ${PG.tip()}` : `HEAD → ${PG.head} @ ${PG.tip()}`;
+    status.textContent = PG.conflict ? `⚠ CONFLICT in ${PG.conflict.file}` : PG.detached ? `HEAD detached @ ${PG.tip()}` : `HEAD → ${PG.head} @ ${PG.tip()}`;
     hudEl.innerHTML = PG.hud().map(([k,v])=>
       `<span style="font-family:var(--font-mono); font-size:11px; padding:3px 10px; border:1px solid var(--border); border-radius:999px; color:var(--color-text-tertiary);"><b style="color:var(--color-text-secondary);">${k}</b> ${v}</span>`).join('');
+    if(PG.conflict && !PG.conflict.resolved){
+      conflictBox.style.display = 'block';
+      conflictTxt.innerHTML = `<b>&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</b> (your ${PG.conflict.file}) <b>=======</b> ${PG.conflict.type==='merge'?PG.conflict.branch:'incoming'}'s version <b>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</b> — pick a resolution:`;
+    } else conflictBox.style.display = 'none';
+    try{ localStorage.setItem('git-pg-save', PG.save()); }catch(e){}
   }
+  conflictBox.addEventListener('click', e=>{
+    const b = e.target.closest('[data-res]'); if(!b) return;
+    const r = b.dataset.res;
+    if(r==='abort'){ run(`git ${PG.conflict.type} --abort`); return; }
+    run(`resolve ${r}`);
+    if(PG.conflict?.type==='rebase') run('git rebase --continue'); else run('git commit');
+  });
   function logTerm(cmd){
     const block = document.createElement('div');
     block.innerHTML = `<div style="color:var(--accent-2);">$ ${cmd.replace(/</g,'&lt;')}</div>` +
@@ -1996,11 +2583,60 @@ function renderPlayground(){
     input.value = b.dataset.c;
     run(b.dataset.c);
   });
-  PG.out = [PG.msg];
-  logTerm('git init');
+  /* strict toggle */
+  const strictBox = document.getElementById('pgStrict');
+  strictBox.checked = localStorage.getItem('git-pg-strict') === '1';
+  PG.strict = strictBox.checked;
+  strictBox.addEventListener('change', ()=>{
+    PG.strict = strictBox.checked;
+    localStorage.setItem('git-pg-strict', strictBox.checked ? '1' : '0');
+    PG.out = [strictBox.checked ? 'Strict mode ON: commits need -m and staged files; errors match real git.' : 'Strict mode OFF: loose syntax accepted.'];
+    PG.ok = true;
+    logTerm('strict '+(strictBox.checked?'on':'off'));
+  });
+  /* share link */
+  document.getElementById('pgShare').addEventListener('click', async ()=>{
+    const url = location.origin + location.pathname + '#pgstate=' + btoa(unescape(encodeURIComponent(PG.save())));
+    try{ await navigator.clipboard.writeText(url); PG.out=['Share link copied — anyone opening it lands in THIS exact repo state.']; }
+    catch(e){ PG.out=['Copy failed — here it is:', url]; }
+    PG.ok = true;
+    logTerm('share');
+  });
+  /* PNG export */
+  document.getElementById('pgPng').addEventListener('click', ()=>{
+    const svg = stage.querySelector('svg'); if(!svg) return;
+    const xml = new XMLSerializer().serializeToString(svg);
+    const img = new Image();
+    img.onload = ()=>{
+      const cv = document.createElement('canvas');
+      cv.width = 1240; cv.height = 464;
+      const cx = cv.getContext('2d');
+      cx.fillStyle = '#07070d'; cx.fillRect(0,0,cv.width,cv.height);
+      cx.drawImage(img, 0, 0, cv.width, cv.height);
+      const a = document.createElement('a');
+      a.download = 'git-graph.png';
+      a.href = cv.toDataURL('image/png');
+      a.click();
+    };
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(xml)));
+    PG.out = ['Graph exported as git-graph.png']; PG.ok = true;
+    logTerm('export png');
+  });
+
+  /* restore: shared state > autosave > fresh */
+  const shared = (location.hash.match(/#pgstate=(.+)/)||[])[1];
+  if(shared){
+    PG.load(decodeURIComponent(escape(atob(shared))));
+    PG.out = ['Loaded a SHARED repo state from the link.'];
+    logTerm('load shared state');
+  } else {
+    const saved = localStorage.getItem('git-pg-save');
+    if(saved && PG.load(saved)){ PG.out = ['Previous session restored (autosave). Type "clear" for a fresh repo.']; logTerm('restore session'); }
+    else { PG.out = [PG.msg]; logTerm('git init'); }
+  }
   refresh();
   input.focus();
-  history.replaceState(null, '', '#playground');
+  if(!shared) history.replaceState(null, '', '#playground');
 }
 
 /* ---- realistic worked code example per command (verb-detected, not generic filler) ---- */
@@ -2307,10 +2943,66 @@ function render(id){
   history.replaceState(null, '', '#'+id);
 }
 
-/* initial render: from hash, playground, arena, or first command */
+/* ============================================================
+   Cmd/Ctrl-K palette + theme toggle
+   ============================================================ */
+(function(){
+  const pal = document.getElementById('palette');
+  const inp = document.getElementById('paletteInput');
+  const list = document.getElementById('paletteList');
+  const PAGES = [
+    { label:'⚡ Playground — full git simulation', go:()=>renderPlayground() },
+    { label:'🎯 Practice Arena — 124 drills', go:()=>renderArena() },
+    { label:'📖 Campaign — Your First Job', go:()=>renderCampaign() },
+    { label:'🃏 Interview Prep', go:()=>renderInterview() },
+  ];
+  let items = [], sel = 0;
+  function open(){ pal.style.display='block'; inp.value=''; filter(''); inp.focus(); }
+  function close(){ pal.style.display='none'; }
+  function filter(q){
+    q = q.toLowerCase();
+    const cmds = ALL.filter(a=>a.cmd.toLowerCase().includes(q)).slice(0, 12)
+      .map(a=>({ label:'⌨ '+a.cmd, go:()=>render(a.id) }));
+    const pages = PAGES.filter(p=>p.label.toLowerCase().includes(q));
+    items = [...pages, ...cmds];
+    sel = 0;
+    paint();
+  }
+  function paint(){
+    list.innerHTML = items.map((it,i)=>
+      `<button type="button" data-pi="${i}" style="all:unset; box-sizing:border-box; display:block; width:100%; padding:11px 18px; cursor:pointer; font-family:var(--font-mono); font-size:13px; color:${i===sel?'var(--color-text-primary)':'var(--color-text-secondary)'}; background:${i===sel?'var(--accent-soft)':'transparent'};">${it.label}</button>`
+    ).join('') || `<div style="padding:16px 18px; color:var(--color-text-tertiary); font-size:13px;">No matches.</div>`;
+  }
+  function go(i){ const it = items[i]; if(!it) return; close(); it.go(); window.scrollTo(0,0); }
+  inp.addEventListener('input', ()=>filter(inp.value));
+  inp.addEventListener('keydown', e=>{
+    if(e.key==='ArrowDown'){ sel=Math.min(items.length-1, sel+1); paint(); e.preventDefault(); }
+    if(e.key==='ArrowUp'){ sel=Math.max(0, sel-1); paint(); e.preventDefault(); }
+    if(e.key==='Enter'){ go(sel); }
+    if(e.key==='Escape'){ close(); }
+  });
+  list.addEventListener('click', e=>{ const b=e.target.closest('[data-pi]'); if(b) go(parseInt(b.dataset.pi,10)); });
+  pal.addEventListener('click', e=>{ if(e.target===pal) close(); });
+  document.addEventListener('keydown', e=>{
+    if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k'){ e.preventDefault(); pal.style.display==='none' ? open() : close(); }
+  });
+  document.getElementById('paletteBtn').addEventListener('click', open);
+
+  /* theme */
+  const themeBtn = document.getElementById('themeBtn');
+  const applyTheme = t => { document.documentElement.setAttribute('data-theme', t); localStorage.setItem('git-theme', t); };
+  applyTheme(localStorage.getItem('git-theme') || 'dark');
+  themeBtn.addEventListener('click', ()=>{
+    applyTheme(document.documentElement.getAttribute('data-theme')==='light' ? 'dark' : 'light');
+  });
+})();
+
+/* initial render: from hash, playground, arena, campaign, interview, shared state, or first command */
 const initId = (location.hash||'').replace('#','') || ALL[0].id;
-if(initId === 'playground') renderPlayground();
+if(initId === 'playground' || initId.startsWith('pgstate=')) renderPlayground();
 else if(initId === 'arena') renderArena();
+else if(initId === 'campaign') renderCampaign();
+else if(initId === 'interview') renderInterview();
 else if(initId.startsWith('arena-')) renderDrill(parseInt(initId.slice(6),10) || 0);
 else if(ALL.find(x=>x.id===initId)) render(initId);
 else render(ALL[0].id);
