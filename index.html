@@ -841,6 +841,105 @@ const PG = {
 };
 PG.reset();
 
+/* isolated repo instances for exercises (share PG's methods) */
+function newRepo(setupCmds=[]){
+  const r = Object.create(PG);
+  r.reset();
+  setupCmds.forEach(c=>r.exec(c));
+  r.msg = ''; r.ok = true;
+  return r;
+}
+
+/* ============================================================
+   LEARN BY DOING — one validated drill per command family
+   ============================================================ */
+const EXERCISES = {
+  commit: {
+    task: 'Make <b>two commits</b> on main.',
+    setup: [],
+    goal: r => r.seq >= 2 && r.head === 'main',
+    hint: 'Run <code>git commit</code> twice.',
+    win: 'Two snapshots saved — main and HEAD moved forward with each one.',
+  },
+  branch: {
+    task: 'Create a branch called <b>feature</b>, switch to it, and make one commit there.',
+    setup: ['git commit','git commit'],
+    goal: r => r.branches.feature && r.head === 'feature' && r.branches.feature !== r.branches.main,
+    hint: '<code>git branch feature</code> → <code>git switch feature</code> → <code>git commit</code> (or use <code>git switch -c feature</code>).',
+    win: 'feature diverged from main — parallel timeline running.',
+  },
+  merge: {
+    task: 'Both branches have moved. <b>Merge feature into main</b> to create a two-parent merge commit.',
+    setup: ['git commit','git branch feature','git switch feature','git commit','git switch main','git commit'],
+    goal: r => (r.commits[r.branches.main]?.parents || []).length === 2,
+    hint: 'Make sure you are on main (<code>git switch main</code>), then <code>git merge feature</code>.',
+    win: 'Merge commit created — both parents preserved in history.',
+  },
+  mergeff: {
+    task: 'feature is strictly ahead of main. Merge it — notice git <b>fast-forwards</b> instead of creating a merge commit.',
+    setup: ['git commit','git branch feature','git switch feature','git commit','git commit','git switch main'],
+    goal: r => r.branches.main === r.branches.feature,
+    hint: 'You are already on main — just <code>git merge feature</code>.',
+    win: 'No merge commit — main\'s label simply slid forward. That\'s a fast-forward.',
+  },
+  rebase: {
+    task: 'feature and main diverged. <b>Rebase feature onto main</b> so history reads as one straight line.',
+    setup: ['git commit','git branch feature','git switch feature','git commit','git switch main','git commit','git switch feature'],
+    goal: r => String(r.branches.feature).includes("'") && r.isAncestor(r.branches.main, r.branches.feature),
+    hint: 'You are on feature — run <code>git rebase main</code>. Watch the commit get a NEW id.',
+    win: 'Replayed with new ids on top of main — the Y became a straight line.',
+  },
+  reset: {
+    task: 'The last two commits on main are garbage. <b>Throw them away</b> so main points at c1.',
+    setup: ['git commit','git commit','git commit'],
+    goal: r => r.branches.main === 'c1',
+    hint: '<code>git reset --hard HEAD~2</code> — moves the label back two steps.',
+    win: 'main rewound — the orphaned commits faded (reflog would still know).',
+  },
+  revert: {
+    task: 'The last commit is bad but <b>already shared</b> — undo it WITHOUT rewriting history.',
+    setup: ['git commit','git commit'],
+    goal: r => String(r.commits[r.branches.main]?.hashLabel || '').startsWith('!'),
+    hint: '<code>git revert HEAD</code> — adds an anti-commit instead of deleting anything.',
+    win: 'History intact, effect cancelled — safe for shared branches.',
+  },
+  cherry: {
+    task: 'feature has a fix (c2) that main needs NOW. <b>Cherry-pick just that commit</b> onto main.',
+    setup: ['git commit','git branch feature','git switch feature','git commit','git switch main'],
+    goal: r => r.commits["c2'"] && r.isAncestor("c2'", r.branches.main),
+    hint: 'You are on main — <code>git cherry-pick c2</code>.',
+    win: "c2' landed on main — the original stayed on feature.",
+  },
+  tag: {
+    task: 'Ship it: make one more commit, then <b>tag the release as v1.0</b>.',
+    setup: ['git commit'],
+    goal: r => r.tags['v1.0'],
+    hint: '<code>git commit</code> then <code>git tag v1.0</code>.',
+    win: 'v1.0 pinned to that exact commit forever — branches move, tags don\'t.',
+  },
+};
+
+/* map each command to its drill (same verb rules as scenes; nearest drill when the op isn't sandboxable) */
+function getExercise(cmd){
+  const c = cmd.toLowerCase();
+  const rules = [
+    [/amend|commit/, 'commit'],
+    [/reset|restore|clean|gc|prune|fsck|maintenance|repack|rm |rm$|reflog/, 'reset'],
+    [/revert/, 'revert'],
+    [/rebase|fixup|autosquash|filter-|range-diff/, 'rebase'],
+    [/cherry/, 'cherry'],
+    [/merge --no-ff|merge <branch> \(fast/, 'mergeff'],
+    [/merge|pull request|open pull|merge pr/, 'merge'],
+    [/branch|switch|checkout|worktree|submodule|subtree|sparse|stash/, 'branch'],
+    [/tag|describe|shortlog/, 'tag'],
+    [/push|remote|fetch|pull|clone|tracking|fork/, 'mergeff'],
+    [/bisect|blame|log|diff|show|grep|status|ls-|cat-file|rev-parse|merge-base/, 'commit'],
+  ];
+  let key = 'commit';
+  for(const [re,k] of rules){ if(re.test(c)){ key = k; break; } }
+  return { key, ex: EXERCISES[key] };
+}
+
 function renderPlayground(){
   document.onkeydown = null; /* drop command-page arrow-key handler */
   document.querySelectorAll('.nav-item').forEach(b=>b.removeAttribute('aria-current'));
@@ -1056,6 +1155,23 @@ function render(id){
         <div class="terminal-body" id="codeExample" style="min-height:auto;"></div>
       </div>
     </div>
+    <div class="panel" style="margin-bottom:var(--space-10); border-color:rgba(94,234,212,0.35);">
+      <div class="panel-head" style="color:var(--accent-2);"><span>🎯 Learn by doing</span><span id="exStatus">drill in progress</span></div>
+      <div style="padding:var(--space-10) var(--space-12) 0; font-size:14px; color:var(--color-text-primary);" id="exTask"></div>
+      <div class="icon-stage" id="exStage" style="min-height:230px;"></div>
+      <div id="exMsg" style="padding:0 var(--space-12); margin-bottom:var(--space-6); min-height:1.5em; font-size:13px; color:var(--color-text-secondary); text-align:center;"></div>
+      <div style="padding:0 var(--space-12) var(--space-8); display:flex; gap:var(--space-5);">
+        <span style="font-family:var(--font-mono); color:var(--accent-2); align-self:center;">$</span>
+        <input class="search-input" id="exInput" type="text" autocomplete="off" spellcheck="false"
+          placeholder="type the command(s) that complete the task…" aria-label="Exercise command input"
+          style="font-family:var(--font-mono); flex:1;">
+        <button class="btn primary" id="exRun">Run</button>
+      </div>
+      <div class="btn-row" style="padding:0 var(--space-12) var(--space-12);">
+        <button class="btn" id="exHint">💡 Hint</button>
+        <button class="btn" id="exReset">↺ Restart drill</button>
+      </div>
+    </div>
     <div class="btn-row">
       <button class="btn" id="prevBtn" ${currentIndex<=0?'disabled':''}>← Previous command</button>
       <button class="btn" id="nextBtn" ${currentIndex>=ALL.length-1?'disabled':''}>Next command →</button>
@@ -1120,6 +1236,56 @@ function render(id){
   contentEl.querySelectorAll('.related-item').forEach(el=>{
     el.addEventListener('click', ()=>{ render(el.dataset.id); window.scrollTo(0,0); });
   });
+
+  /* ---- Learn by doing drill ---- */
+  (function initExercise(){
+    const { ex } = getExercise(item.cmd);
+    const stage = document.getElementById('exStage');
+    const taskEl = document.getElementById('exTask');
+    const msgEl = document.getElementById('exMsg');
+    const statusEl = document.getElementById('exStatus');
+    const input = document.getElementById('exInput');
+    let repo, done;
+    function refresh(){
+      drawGraph(stage, repo.toStep());
+      statusEl.textContent = done ? '✅ passed' : `HEAD → ${repo.head} @ ${repo.tip()}`;
+      statusEl.style.color = done ? 'var(--accent-2)' : '';
+    }
+    function start(){
+      repo = newRepo(ex.setup);
+      done = false;
+      taskEl.innerHTML = ex.task;
+      msgEl.textContent = 'Repo prepared. Type your command below.';
+      msgEl.style.color = 'var(--color-text-tertiary)';
+      input.disabled = false;
+      refresh();
+    }
+    function run(cmd){
+      if(!cmd.trim() || done) return;
+      repo.exec(cmd);
+      if(ex.goal(repo)){
+        done = true;
+        repo.msg = '';
+        msgEl.innerHTML = '✅ <b>' + ex.win + '</b>';
+        msgEl.style.color = 'var(--accent-2)';
+        input.disabled = true;
+      } else {
+        msgEl.textContent = repo.msg || '…';
+        msgEl.style.color = repo.ok ? 'var(--color-text-secondary)' : 'var(--accent-danger)';
+      }
+      refresh();
+      input.value = '';
+      if(!done) input.focus();
+    }
+    document.getElementById('exRun').addEventListener('click', ()=>run(input.value));
+    input.addEventListener('keydown', e=>{ if(e.key==='Enter') run(input.value); });
+    document.getElementById('exHint').addEventListener('click', ()=>{
+      msgEl.innerHTML = '💡 ' + ex.hint;
+      msgEl.style.color = 'var(--accent-warn)';
+    });
+    document.getElementById('exReset').addEventListener('click', start);
+    start();
+  })();
 
   /* keyboard: ← → step the animation, Shift+←/→ change command */
   document.onkeydown = (e)=>{
