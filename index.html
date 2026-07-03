@@ -301,6 +301,15 @@ a{ color:var(--accent); }
 @keyframes reorderHop{ 0%{transform:translateY(0);} 50%{transform:translateY(-18px);} 100%{transform:translateY(0);} }
 @keyframes ringBurst{ 0%{r:4; stroke-width:6; stroke-opacity:0.9;} 100%{r:36; stroke-width:0.5; stroke-opacity:0;} }
 @keyframes shakeX{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-4px);} 75%{transform:translateX(4px);} }
+@keyframes pillHop{ 0%{transform:translateY(0) scale(1);} 35%{transform:translateY(-9px) scale(1.12);} 70%{transform:translateY(2px) scale(0.97);} 100%{transform:translateY(0) scale(1);} }
+@keyframes confettiFall{
+  0%{ transform:translateY(-10px) rotate(0deg); opacity:1; }
+  100%{ transform:translateY(240px) rotate(var(--spin,540deg)) translateX(var(--drift,0px)); opacity:0; }
+}
+.confetti-bit{
+  position:absolute; top:0; width:8px; height:8px; border-radius:2px; pointer-events:none;
+  animation:confettiFall var(--dur,1.4s) cubic-bezier(.2,.6,.6,1) forwards;
+}
 </style>
 </head>
 <body>
@@ -399,6 +408,23 @@ const LANE_Y = { 0:46, 1:96, 2:146, 3:196 };
 function N(id, x, lane, color, opts={}){ return Object.assign({id, x, lane, color, hash:id}, opts); }
 
 const SVGNS = 'http://www.w3.org/2000/svg';
+
+function confettiBurst(hostEl){
+  hostEl.style.position = 'relative'; hostEl.style.overflow = 'hidden';
+  const colors = ['#7c9eff','#5eead4','#fbbf24','#f472b6','#a78bfa'];
+  for(let i=0;i<28;i++){
+    const b = document.createElement('div');
+    b.className = 'confetti-bit';
+    b.style.left = (4 + Math.random()*92) + '%';
+    b.style.background = colors[i % colors.length];
+    b.style.setProperty('--dur', (1 + Math.random()*0.9) + 's');
+    b.style.setProperty('--spin', (360 + Math.random()*720) + 'deg');
+    b.style.setProperty('--drift', ((Math.random()-0.5)*90) + 'px');
+    b.style.animationDelay = (Math.random()*0.18) + 's';
+    hostEl.appendChild(b);
+    setTimeout(()=>b.remove(), 2400);
+  }
+}
 function drawGraph(container, step){
   const W=620, H=232;
   const nodes = step.nodes||[], edges = step.edges||[], refs = step.refs||[];
@@ -413,8 +439,11 @@ function drawGraph(container, step){
     container.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px; display:block; margin:0 auto;"></svg>`;
     const svg = container.querySelector('svg');
     const mk = ()=>{ const g=document.createElementNS(SVGNS,'g'); svg.appendChild(g); return g; };
-    st = container._g = { svg, staticG:mk(), edgesG:mk(), nodesG:mk(), refsG:mk(), nodeEls:new Map(), refEls:new Map() };
+    st = container._g = { svg, staticG:mk(), edgesG:mk(), fxG:mk(), nodesG:mk(), refsG:mk(), nodeEls:new Map(), refEls:new Map(), edgeEls:new Map(), refPos:new Map() };
   }
+  if(!st.fxG){ st.fxG = document.createElementNS(SVGNS,'g'); st.svg.insertBefore(st.fxG, st.nodesG); }
+  if(!st.edgeEls) st.edgeEls = new Map();
+  if(!st.refPos) st.refPos = new Map();
 
   /* static layer: lane guides + remote box */
   let stat = '';
@@ -427,17 +456,67 @@ function drawGraph(container, step){
   }
   st.staticG.innerHTML = stat;
 
-  /* edges layer: cheap redraw (nodes carry the motion) */
-  let esvg = '';
+  /* edges layer: keyed paths — new edges DRAW themselves in + send a pulse dot along the path */
+  const edgeD = (A,B)=>{
+    const x1=px(A), y1=py(A), x2=px(B), y2=py(B);
+    if(y1===y2) return `M${x1+16} ${y1} L${x2-16} ${y2}`;
+    return `M${x1+12} ${y1+(y2>y1?12:-12)} Q ${x1+12} ${(y1+y2)/2} ${(x1+x2)/2} ${(y1+y2)/2} T ${x2-12} ${y2+(y1>y2?12:-12)}`;
+  };
+  const seenEdges = new Set();
   edges.forEach(([a,b,style])=>{
     const A=nodeById[a], B=nodeById[b]; if(!A||!B) return;
-    const x1=px(A), y1=py(A), x2=px(B), y2=py(B);
+    const key = a+'->'+b;
+    seenEdges.add(key);
+    const d = edgeD(A,B);
     const col = style==='new' ? GC.feat : style==='danger' ? GC.danger : 'rgba(255,255,255,0.3)';
-    const dash = style==='new' ? `stroke-dasharray="6 4" style="animation:dashFlow .8s linear infinite"` : style==='danger' ? 'stroke-dasharray="4 4"' : '';
-    if(y1===y2) esvg += `<line x1="${x1+16}" y1="${y1}" x2="${x2-16}" y2="${y2}" stroke="${col}" stroke-width="2.5" ${dash}/>`;
-    else esvg += `<path d="M${x1+12} ${y1+(y2>y1?12:-12)} Q ${x1+12} ${(y1+y2)/2} ${(x1+x2)/2} ${(y1+y2)/2} T ${x2-12} ${y2+(y1>y2?12:-12)}" fill="none" stroke="${col}" stroke-width="2.5" ${dash}/>`;
+    let el = st.edgeEls.get(key);
+    if(!el){
+      el = document.createElementNS(SVGNS,'path');
+      el.setAttribute('fill','none');
+      el.setAttribute('stroke-width','2.5');
+      el.setAttribute('d', d);
+      st.edgesG.appendChild(el);
+      st.edgeEls.set(key, el);
+      /* draw-in: dash the full length, then release */
+      const L = el.getTotalLength();
+      el.setAttribute('stroke-dasharray', L);
+      el.setAttribute('stroke-dashoffset', L);
+      el.style.transition = 'stroke-dashoffset .55s cubic-bezier(.3,.7,.3,1)';
+      requestAnimationFrame(()=>requestAnimationFrame(()=>{ el.setAttribute('stroke-dashoffset', 0); }));
+      setTimeout(()=>{
+        el.style.transition = '';
+        if(style==='new'){ el.setAttribute('stroke-dasharray','6 4'); el.style.animation='dashFlow .8s linear infinite'; }
+        else if(style==='danger'){ el.setAttribute('stroke-dasharray','4 4'); el.removeAttribute('stroke-dashoffset'); }
+        else { el.removeAttribute('stroke-dasharray'); el.removeAttribute('stroke-dashoffset'); }
+      }, 620);
+      /* pulse dot travels the new edge */
+      const dot = document.createElementNS(SVGNS,'circle');
+      dot.setAttribute('r','4.5');
+      dot.setAttribute('fill', col);
+      dot.style.filter = `drop-shadow(0 0 6px ${col})`;
+      const mo = document.createElementNS(SVGNS,'animateMotion');
+      mo.setAttribute('dur','0.65s');
+      mo.setAttribute('path', d.replace(/^M/,'M '));
+      mo.setAttribute('fill','freeze');
+      dot.appendChild(mo);
+      st.fxG.appendChild(dot);
+      setTimeout(()=>dot.remove(), 750);
+    } else {
+      el.setAttribute('d', d);
+      if(style==='new'){ el.setAttribute('stroke-dasharray','6 4'); el.style.animation='dashFlow .8s linear infinite'; }
+      else if(style==='danger'){ el.setAttribute('stroke-dasharray','4 4'); el.style.animation=''; }
+      else { el.removeAttribute('stroke-dasharray'); el.style.animation=''; }
+    }
+    el.setAttribute('stroke', col);
   });
-  st.edgesG.innerHTML = esvg;
+  st.edgeEls.forEach((el, key)=>{
+    if(!seenEdges.has(key)){
+      el.style.transition = 'opacity .3s ease';
+      el.style.opacity = '0';
+      setTimeout(()=>el.remove(), 320);
+      st.edgeEls.delete(key);
+    }
+  });
 
   /* nodes layer: keyed groups, position tweened via CSS transform transition */
   const seen = new Set();
@@ -457,6 +536,18 @@ function drawGraph(container, step){
         el.style.opacity = '1';
         el.style.transform = `translate(${px(n)}px, ${py(n)}px) scale(1)`;
       }));
+      /* double burst ring on arrival */
+      if(!n.ghost){
+        for(let k=0;k<2;k++){
+          const ring = document.createElementNS(SVGNS,'circle');
+          ring.setAttribute('cx', px(n)); ring.setAttribute('cy', py(n));
+          ring.setAttribute('fill','none'); ring.setAttribute('stroke', n.color);
+          ring.style.animation = `ringBurst .75s cubic-bezier(.2,.9,.3,1) forwards`;
+          ring.style.animationDelay = (k*0.13)+'s';
+          st.fxG.appendChild(ring);
+          setTimeout(()=>ring.remove(), 1000);
+        }
+      }
     } else {
       el.style.opacity = '1';
       el.style.transform = `translate(${px(n)}px, ${py(n)}px) scale(1)`;
@@ -496,16 +587,25 @@ function drawGraph(container, step){
     if(!el){
       el = document.createElementNS(SVGNS,'g');
       el.style.transition = 'transform .55s cubic-bezier(.25,.8,.3,1.1), opacity .35s ease';
-      el.innerHTML = `<rect y="-11" height="20" rx="10" fill-opacity="0.16" stroke-width="1.4"/><text y="4" text-anchor="middle" font-size="10" font-weight="700"></text>`;
+      el.innerHTML = `<g class="pillbody"><rect y="-11" height="20" rx="10" fill-opacity="0.16" stroke-width="1.4"/><text y="4" text-anchor="middle" font-size="10" font-weight="700"></text></g>`;
       el.style.opacity = '0';
       el.style.transform = `translate(${x}px, ${y}px)`;
       st.refsG.appendChild(el);
       st.refEls.set(r.name, el);
       requestAnimationFrame(()=>requestAnimationFrame(()=>{ el.style.opacity='1'; }));
     } else {
+      const prev = st.refPos.get(r.name);
       el.style.transform = `translate(${x}px, ${y}px)`;
       el.style.opacity = '1';
+      /* springy hop when the label jumps to a new commit */
+      if(prev && (prev.x !== x || prev.y !== y)){
+        const body = el.querySelector('.pillbody');
+        body.style.animation = 'none';
+        void body.getBBox();
+        body.style.animation = 'pillHop .5s cubic-bezier(.3,1.6,.4,1)';
+      }
     }
+    st.refPos.set(r.name, {x, y});
     const rect = el.querySelector('rect');
     rect.setAttribute('x', -w/2); rect.setAttribute('width', w);
     rect.setAttribute('fill', r.color); rect.setAttribute('stroke', r.color);
@@ -1269,6 +1369,7 @@ function render(id){
         msgEl.innerHTML = '✅ <b>' + ex.win + '</b>';
         msgEl.style.color = 'var(--accent-2)';
         input.disabled = true;
+        confettiBurst(stage);
       } else {
         msgEl.textContent = repo.msg || '…';
         msgEl.style.color = repo.ok ? 'var(--color-text-secondary)' : 'var(--accent-danger)';
