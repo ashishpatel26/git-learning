@@ -909,18 +909,34 @@ function renderIcon(container, catIndex, seed, upToStep, cmd){
 const PG = {
   reset(){
     this.seq = 0;
+    this.rseq = 0;
     this.commits = { c0: { parents: [], lane: 2 } };
     this.branches = { main: 'c0' };
     this.laneOf = { main: 2 };
     this.laneCycle = [1, 3, 0];
     this.nextLane = 0;
     this.head = 'main';
+    this.detached = null;
     this.tags = {};
-    this.msg = 'Fresh repo with one root commit. Try: git commit';
+    this.workdir = {};
+    this.staged = new Set();
+    this.trackedFiles = new Set();
+    this.stash = [];
+    this.remote = { name: null, url: null, branches: {} };
+    this.reflog = [];
+    this.bisect = null;
+    this.config = {};
+    this.out = [];
+    this.msg = 'Fresh repo with one root commit. Type "help" for every supported command.';
     this.ok = true;
   },
   newId(){ return 'c' + (++this.seq); },
-  tip(){ return this.branches[this.head]; },
+  tip(){ return this.detached || this.branches[this.head]; },
+  logHead(action){ this.reflog.unshift(`${action} → ${this.tip()}`); },
+  moveTip(id){
+    if(this.detached) this.detached = id;
+    else this.branches[this.head] = id;
+  },
   isAncestor(a, b){ /* is a an ancestor of (or equal to) b */
     const stack = [b], seen = new Set();
     while(stack.length){
@@ -945,16 +961,58 @@ const PG = {
     const [verb, ...args] = line.split(/\s+/);
     const a0 = args[0];
     this.ok = true;
+    this.out = [];
     switch(verb){
       case 'commit': {
+        const mMsg = raw.match(/-m\s+["']?([^"']+)["']?/);
+        if(line.includes('--amend')){
+          const old = this.tip();
+          const c = this.commits[old];
+          const id = old.replace(/\*+$/,'') + '*';
+          this.commits[id] = { parents: c.parents, lane: c.lane, msg: mMsg?.[1] || c.msg };
+          this.moveTip(id);
+          this.staged = new Set();
+          this.msg = `Amended: ${old} replaced in place by ${id} (NEW hash — same position).`;
+          this.logHead('commit --amend');
+          break;
+        }
         const id = this.newId();
-        this.commits[id] = { parents: [this.tip()], lane: this.laneOf[this.head] };
-        this.branches[this.head] = id;
-        this.msg = `Committed ${id} on ${this.head}.`;
+        this.commits[id] = { parents: [this.tip()], lane: this.detached ? 3 : this.laneOf[this.head], msg: mMsg?.[1] };
+        [...this.staged].forEach(f=>this.trackedFiles.add(f.split(' ')[0]));
+        const hadStage = this.staged.size > 0;
+        this.staged.forEach(f=>delete this.workdir[f]);
+        this.staged = new Set();
+        this.moveTip(id);
+        this.msg = `Committed ${id}${mMsg?` "${mMsg[1]}"`:''} on ${this.detached?'(detached HEAD)':this.head}${hadStage?' — staged files snapshotted':''}${line.includes('--allow-empty')?' (empty commit)':''}.`;
+        this.logHead('commit');
         break;
       }
       case 'branch': {
-        if(!a0){ this.ok=false; this.msg='Usage: git branch <name>'; break; }
+        if(!a0){
+          this.out = Object.keys(this.branches).map(b=>`${b===this.head&&!this.detached?'* ':'  '}${b} → ${this.branches[b]}`);
+          this.msg = this.out[0];
+          break;
+        }
+        if(a0==='-d' || a0==='-D'){
+          const b = args[1];
+          if(!this.branches[b]){ this.ok=false; this.msg=`No branch named '${b}'.`; break; }
+          if(b===this.head){ this.ok=false; this.msg=`Cannot delete the branch you're on.`; break; }
+          if(a0==='-d' && !this.isAncestor(this.branches[b], this.branches[this.head]||this.tip())){
+            this.ok=false; this.msg=`'${b}' has unmerged commits — merge it first, or force with -D.`; break;
+          }
+          delete this.branches[b];
+          this.msg = `Deleted branch ${b}.`;
+          break;
+        }
+        if(a0==='-m'){
+          const oldN = args.length>2?args[1]:this.head, newN = args.length>2?args[2]:args[1];
+          if(!this.branches[oldN]){ this.ok=false; this.msg=`No branch '${oldN}'.`; break; }
+          this.branches[newN]=this.branches[oldN]; this.laneOf[newN]=this.laneOf[oldN];
+          delete this.branches[oldN];
+          if(this.head===oldN) this.head=newN;
+          this.msg = `Renamed ${oldN} → ${newN}.`;
+          break;
+        }
         if(this.branches[a0]){ this.ok=false; this.msg=`Branch '${a0}' already exists.`; break; }
         this.branches[a0] = this.tip();
         this.laneOf[a0] = this.laneCycle[this.nextLane++ % this.laneCycle.length];
@@ -971,28 +1029,66 @@ const PG = {
             this.laneOf[name] = this.laneCycle[this.nextLane++ % this.laneCycle.length];
           }
         }
-        if(!this.branches[name]){ this.ok=false; this.msg=`No branch named '${name}'.`; break; }
+        if(!this.branches[name]){
+          if(verb==='checkout' && this.commits[name]){
+            this.detached = name;
+            this.msg = `⚠ Detached HEAD at ${name} — you're standing on a commit, not a branch. New commits here can be lost; anchor with: git switch -c <name>`;
+            this.logHead(`checkout ${name} (detached)`);
+            break;
+          }
+          this.ok=false; this.msg=`No branch named '${name}'.${verb==='checkout'?' (checkout <commit-id> also works for time-travel)':''}`; break;
+        }
+        this.detached = null;
         this.head = name;
         this.msg = `Switched to '${name}' (tip: ${this.branches[name]}).`;
+        this.logHead(`switch ${name}`);
         break;
       }
       case 'merge': {
-        if(!a0 || !this.branches[a0]){ this.ok=false; this.msg=`Usage: git merge <existing-branch>`; break; }
-        const target = this.branches[a0];
-        if(this.isAncestor(target, this.tip())){ this.msg = `Already up to date — ${a0} is behind ${this.head}.`; break; }
-        if(this.isAncestor(this.tip(), target)){
-          this.branches[this.head] = target;
-          this.msg = `Fast-forward: ${this.head} slid up to ${target} (no merge commit needed).`;
+        const squash = line.includes('--squash');
+        const noff = line.includes('--no-ff');
+        const target0 = args.find(a=>!a.startsWith('-'));
+        if(!target0 || !this.branches[target0]){ this.ok=false; this.msg=`Usage: git merge [--no-ff|--squash] <existing-branch>`; break; }
+        const target = this.branches[target0];
+        if(this.isAncestor(target, this.tip())){ this.msg = `Already up to date — ${target0} is behind ${this.head}.`; break; }
+        if(squash){
+          const id = this.newId();
+          this.commits[id] = { parents: [this.tip()], lane: this.laneOf[this.head], hashLabel:'sq'+this.seq };
+          this.moveTip(id);
+          this.msg = `Squash merge: ${target0}'s work landed as ONE ordinary commit (${id}) — no merge parents, branch history not linked.`;
+          this.logHead('merge --squash');
+          break;
+        }
+        if(this.isAncestor(this.tip(), target) && !noff){
+          this.moveTip(target);
+          this.msg = `Fast-forward: ${this.head} slid up to ${target} (no merge commit needed). Force one next time with --no-ff.`;
+          this.logHead('merge (ff)');
           break;
         }
         const id = this.newId();
         this.commits[id] = { parents: [this.tip(), target], lane: this.laneOf[this.head], merge:true };
-        this.branches[this.head] = id;
-        this.msg = `Merge commit ${id} created with two parents.`;
+        this.moveTip(id);
+        this.msg = `Merge commit ${id} created with two parents${noff?' (--no-ff: forced even though ff was possible)':''}.`;
+        this.logHead('merge');
         break;
       }
       case 'rebase': {
-        if(!a0 || !this.branches[a0]){ this.ok=false; this.msg=`Usage: git rebase <existing-branch>`; break; }
+        if(a0==='-i'){
+          const m = line.match(/HEAD~(\d+)/);
+          const n = m ? parseInt(m[1],10) : 2;
+          const ch = [];
+          let id = this.tip();
+          for(let i=0;i<n && id && (this.commits[id].parents||[]).length;i++){ ch.unshift(id); id=(this.commits[id].parents||[])[0]; }
+          if(ch.length<2){ this.ok=false; this.msg='Need at least 2 commits to squash. Try: git rebase -i HEAD~2'; break; }
+          const base = (this.commits[ch[0]].parents||[])[0];
+          const sid = 'S'+(++this.seq);
+          this.commits[sid] = { parents:[base], lane:this.laneOf[this.head] ?? 2, hashLabel:sid };
+          this.moveTip(sid);
+          this.msg = `Interactive rebase: squashed ${ch.join(' + ')} into one clean commit ${sid}.`;
+          this.logHead('rebase -i (squash)');
+          break;
+        }
+        if(!a0 || !this.branches[a0]){ this.ok=false; this.msg=`Usage: git rebase <existing-branch> | git rebase -i HEAD~n`; break; }
         const ontoTip = this.branches[a0];
         const chain = this.uniqueChain(this.head, ontoTip);
         if(!chain.length){ this.msg = `Nothing to rebase — ${this.head} is already based on ${a0}.`; break; }
@@ -1003,81 +1099,409 @@ const PG = {
           base = id;
         });
         this.branches[this.head] = base;
-        this.msg = `Rebased: ${chain.length} commit(s) replayed onto ${a0} as ${chain.map(c=>c+"'").join(', ')}.`;
+        this.msg = `Rebased: ${chain.length} commit(s) replayed onto ${a0} as ${chain.map(c=>c+"'").join(', ')} — NEW hashes, straight line.`;
+        this.logHead('rebase');
         break;
       }
       case 'reset': {
+        const mode = line.includes('--soft') ? 'soft' : line.includes('--mixed') ? 'mixed' : 'hard';
         const m = line.match(/HEAD~(\d+)/);
         const n = m ? parseInt(m[1],10) : 1;
         let id = this.tip();
         for(let i=0;i<n;i++){ const p=(this.commits[id].parents||[])[0]; if(!p){ break; } id=p; }
-        this.branches[this.head] = id;
-        this.msg = `${this.head} moved back to ${id}. Orphaned commits fade away (reflog would remember).`;
+        this.moveTip(id);
+        if(mode==='hard'){ this.workdir={}; this.staged=new Set(); }
+        else if(mode==='soft'){ this.staged.add('(changes from undone commits)'); }
+        else { this.workdir['(changes from undone commits)']='modified'; }
+        this.msg = `reset --${mode}: ${this.detached?'HEAD':this.head} moved back to ${id}. ${mode==='hard'?'Work discarded.':mode==='soft'?'Changes kept STAGED.':'Changes kept in working dir, unstaged.'} (reflog remembers)`;
+        this.logHead(`reset --${mode} HEAD~${n}`);
         break;
       }
       case 'revert': {
+        const target = (a0 && a0!=='HEAD' && this.commits[a0]) ? a0 : this.tip();
         const id = this.newId();
-        const reverted = this.tip();
-        this.commits[id] = { parents: [reverted], lane: this.laneOf[this.head], hashLabel: '!' + reverted };
-        this.branches[this.head] = id;
-        this.msg = `Revert commit added — undoes ${reverted} without rewriting history.`;
+        this.commits[id] = { parents: [this.tip()], lane: this.detached?3:this.laneOf[this.head], hashLabel: '!' + target };
+        this.moveTip(id);
+        this.msg = `Revert commit added — cancels ${target}'s changes without rewriting history. Safe on shared branches.`;
+        this.logHead('revert');
         break;
       }
       case 'cherry-pick': {
         if(!a0 || !this.commits[a0]){ this.ok=false; this.msg=`Usage: git cherry-pick <commit-id> (e.g. one shown in the graph)`; break; }
         const id = a0 + "'";
         if(this.commits[id]){ this.ok=false; this.msg=`${a0} was already picked.`; break; }
-        this.commits[id] = { parents: [this.tip()], lane: this.laneOf[this.head] };
-        this.branches[this.head] = id;
-        this.msg = `Copied ${a0} onto ${this.head} as ${id}.`;
+        this.commits[id] = { parents: [this.tip()], lane: this.detached?3:this.laneOf[this.head] };
+        this.moveTip(id);
+        this.msg = `Copied ${a0} onto ${this.detached?'HEAD':this.head} as ${id} — original untouched.`;
+        this.logHead('cherry-pick');
         break;
       }
       case 'tag': {
-        if(!a0){ this.ok=false; this.msg='Usage: git tag <name>'; break; }
-        this.tags[a0] = this.tip();
-        this.msg = `Tag '${a0}' pinned to ${this.tip()} forever.`;
+        if(!a0){
+          this.out = Object.keys(this.tags).length ? Object.entries(this.tags).map(([t,id])=>`${t} → ${id}`) : ['(no tags yet)'];
+          this.msg = this.out[0];
+          break;
+        }
+        if(a0==='-d'){
+          if(!this.tags[args[1]]){ this.ok=false; this.msg=`No tag '${args[1]}'.`; break; }
+          delete this.tags[args[1]]; this.msg=`Deleted tag ${args[1]}.`; break;
+        }
+        const name = a0==='-a' ? args[1] : a0;
+        this.tags[name] = this.tip();
+        this.msg = `Tag '${name}' pinned to ${this.tip()} forever${a0==='-a'?' (annotated: stores author+date+message)':''}.`;
         break;
       }
       case 'reset-playground': case 'clear': this.reset(); break;
       default:
-        this.ok = false;
-        this.msg = `Unknown or unsupported: '${verb}'. Supported: commit, branch, switch/checkout [-c], merge, rebase, reset --hard HEAD~n, revert, cherry-pick <id>, tag, clear.`;
+        if(!this.execExtended(verb, args, line)){
+          this.ok = false;
+          this.msg = `Unknown command: '${verb}'. Type 'help' for the full supported list.`;
+        }
+    }
+    if(!this.out.length && this.msg) this.out = [this.msg];
+  },
+
+  /* ---------- extended command set: files, stash, remote, inspection, plumbing, maintenance ---------- */
+  execExtended(verb, args, line){
+    const a0 = args[0], a1 = args[1];
+    const say = (...l)=>{ this.out = l; this.msg = l[0]; };
+    const chain = (from, max=12)=>{ /* first-parent walk */
+      const out=[]; let id=from;
+      while(id && out.length<max){ out.push(id); id=(this.commits[id]?.parents||[])[0]; }
+      return out;
+    };
+    switch(verb){
+      /* ----- working dir & staging ----- */
+      case 'touch': case 'edit': {
+        if(!a0) { this.ok=false; say(`Usage: ${verb} <file>`); return true; }
+        this.workdir[a0] = this.workdir[a0]==='staged' ? 'modified' : (this.trackedFiles.has(a0) ? 'modified' : 'untracked');
+        say(`${a0} ${this.trackedFiles.has(a0)?'modified':'created'} in the working directory.`, `Next: git add ${a0}`);
+        return true;
+      }
+      case 'status': {
+        const staged = [...this.staged], dirty = Object.entries(this.workdir).filter(([f,s])=>!this.staged.has(f));
+        const l = [`On branch ${this.detached?`(detached HEAD at ${this.tip()})`:this.head}`];
+        if(staged.length){ l.push('Changes to be committed:'); staged.forEach(f=>l.push(`  new/modified: ${f}`)); }
+        if(dirty.length){ l.push('Changes not staged / untracked:'); dirty.forEach(([f,s])=>l.push(`  ${s}: ${f}`)); }
+        if(!staged.length && !dirty.length) l.push('nothing to commit, working tree clean');
+        say(...l);
+        return true;
+      }
+      case 'add': {
+        if(!a0){ this.ok=false; say('Usage: git add <file> | . | -A | -u'); return true; }
+        const files = (a0==='.'||a0==='-A') ? Object.keys(this.workdir)
+                    : a0==='-u' ? Object.keys(this.workdir).filter(f=>this.trackedFiles.has(f))
+                    : args.filter(f=>this.workdir[f]!==undefined);
+        if(!files.length){ this.ok=false; say(`Nothing matched to stage. Create work first: edit <file>`); return true; }
+        files.forEach(f=>this.staged.add(f));
+        say(`Staged: ${files.join(', ')}`, 'The tray is loaded — git commit -m "msg" to snapshot it.');
+        return true;
+      }
+      case 'restore': {
+        if(a0==='--staged' && a1){ this.staged.delete(a1); say(`${a1} unstaged — edits kept in the working dir.`); return true; }
+        if(a0){ delete this.workdir[a0]; this.staged.delete(a0); say(`${a0} restored to last committed state — local edits discarded.`); return true; }
+        this.ok=false; say('Usage: git restore [--staged] <file>'); return true;
+      }
+      case 'rm': {
+        if(!a0){ this.ok=false; say('Usage: git rm <file>'); return true; }
+        this.trackedFiles.delete(a0); delete this.workdir[a0]; this.staged.add(a0+' (deleted)');
+        say(`rm '${a0}' — deletion staged.`);
+        return true;
+      }
+      case 'mv': {
+        if(!a0||!a1){ this.ok=false; say('Usage: git mv <old> <new>'); return true; }
+        this.trackedFiles.delete(a0); this.trackedFiles.add(a1); this.staged.add(`${a0} → ${a1}`);
+        say(`Renamed ${a0} → ${a1} and staged the rename in one step.`);
+        return true;
+      }
+      /* ----- stash ----- */
+      case 'stash': {
+        const sub = a0 || 'push';
+        if(sub==='push' || sub==='save'){
+          const items = [...new Set([...Object.keys(this.workdir), ...this.staged])];
+          if(!items.length){ say('No local changes to save.'); return true; }
+          this.stash.unshift({ at:this.tip(), items });
+          this.workdir = {}; this.staged = new Set();
+          say(`Saved working directory state as stash@{0} (${items.join(', ')})`, 'Working tree is clean.');
+        } else if(sub==='list'){
+          say(...(this.stash.length ? this.stash.map((s,i)=>`stash@{${i}}: WIP on ${this.head} at ${s.at} — ${s.items.join(', ')}`) : ['(stash is empty)']));
+        } else if(sub==='pop' || sub==='apply'){
+          if(!this.stash.length){ this.ok=false; say('No stash entries found.'); return true; }
+          const s = sub==='pop' ? this.stash.shift() : this.stash[0];
+          s.items.forEach(f=>{ this.workdir[f]='modified'; });
+          say(`${sub==='pop'?'Popped':'Applied'} stash: ${s.items.join(', ')} back in the working dir.${sub==='apply'?' (entry kept in stash)':''}`);
+        } else if(sub==='drop'){
+          if(!this.stash.length){ this.ok=false; say('No stash entries found.'); return true; }
+          const s = this.stash.shift(); say(`Dropped stash entry (${s.items.join(', ')}).`);
+        } else if(sub==='clear'){ this.stash=[]; say('Stash cleared.'); }
+        else { this.ok=false; say(`Unknown stash subcommand '${sub}'. Try: push, pop, apply, list, drop, clear.`); }
+        return true;
+      }
+      /* ----- remote ----- */
+      case 'remote': {
+        if(a0==='add'){ this.remote.url = args[2] || 'https://github.com/you/repo.git'; this.remote.name = a1||'origin'; say(`Remote '${this.remote.name}' added → ${this.remote.url}`); return true; }
+        if(a0==='-v' || !a0){ say(...(this.remote.url ? [`${this.remote.name}\t${this.remote.url} (fetch)`,`${this.remote.name}\t${this.remote.url} (push)`] : ['(no remotes configured — git remote add origin <url>)'])); return true; }
+        if(a0==='remove'||a0==='rm'){ this.remote={name:null,url:null,branches:{}}; say('Remote removed.'); return true; }
+        say(`remote ${a0}: simulated OK.`); return true;
+      }
+      case 'push': {
+        if(!this.remote.url){ this.remote = {name:'origin', url:'https://github.com/you/repo.git', branches:{}}; }
+        const force = line.includes('--force') || line.includes('-f ');
+        const br = this.detached ? null : this.head;
+        if(!br){ this.ok=false; say('Cannot push a detached HEAD — create a branch first.'); return true; }
+        const rTip = this.remote.branches[br];
+        if(rTip && !this.isAncestor(rTip, this.branches[br]) && !force){
+          this.ok=false; say(`! [rejected] ${br} → ${br} (non-fast-forward)`, 'Remote has commits you don\'t. Pull first, or push --force (with lease, carefully).');
+          return true;
+        }
+        this.remote.branches[br] = this.branches[br];
+        this.fetched = true;
+        say(`Pushed ${br} → origin/${br} (${this.branches[br]})${force?' [forced]':''}`, 'Remote mirror now matches local.');
+        return true;
+      }
+      case 'teammate': {
+        if(!this.remote.url || !this.remote.branches.main){ this.ok=false; say('No remote main yet — push first, then teammates can build on it.'); return true; }
+        const id = 'r' + (++this.rseq);
+        this.commits[id] = { parents:[this.remote.branches.main], lane: this.laneOf.main ?? 2, remoteOnly:true };
+        this.remote.branches.main = id;
+        say(`👩‍💻 A teammate pushed ${id} to origin/main.`, 'Run git fetch to see it, git pull to merge it.');
+        return true;
+      }
+      case 'fetch': {
+        if(!this.remote.url){ this.ok=false; say('No remote configured.'); return true; }
+        const news = Object.entries(this.remote.branches).filter(([b,id])=>this.commits[id]?.remoteOnly);
+        this.fetched = true;
+        say(news.length ? `Fetched: ${news.map(([b,id])=>`origin/${b} → ${id}`).join(', ')}` : 'Fetched — already up to date.',
+            'Downloaded history only. Your working branches did not move.');
+        return true;
+      }
+      case 'pull': {
+        if(!this.remote.url || !this.remote.branches[this.head]){ this.ok=false; say('Nothing to pull — no remote tracking branch.'); return true; }
+        const rTip = this.remote.branches[this.head];
+        this.fetched = true;
+        if(this.isAncestor(rTip, this.tip())){ say('Already up to date.'); return true; }
+        if(this.isAncestor(this.tip(), rTip)){
+          this.branches[this.head] = rTip;
+          if(this.commits[rTip]) delete this.commits[rTip].remoteOnly;
+          say(`Fast-forward pull: ${this.head} caught up to ${rTip}.`);
+          return true;
+        }
+        const id = this.newId();
+        this.commits[id] = { parents:[this.tip(), rTip], lane:this.laneOf[this.head], merge:true };
+        if(this.commits[rTip]) delete this.commits[rTip].remoteOnly;
+        this.branches[this.head] = id;
+        say(`Pull = fetch + merge: merge commit ${id} joins your work with origin/${this.head}.`);
+        return true;
+      }
+      case 'clone': {
+        say('Cloning simulated: in real life this copies the ENTIRE repo + history to a new folder.', 'Here, use "clear" to start a fresh repo instead.');
+        return true;
+      }
+      /* ----- inspection ----- */
+      case 'log': {
+        const ids = chain(this.tip());
+        const graph = line.includes('--graph');
+        say(...ids.map((id,i)=>{
+          const c = this.commits[id];
+          const refs = [
+            ...Object.entries(this.branches).filter(([b,t])=>t===id).map(([b])=>b),
+            ...Object.entries(this.tags).filter(([t,x])=>x===id).map(([t])=>'tag: '+t),
+          ];
+          return `${graph ? (i===0?'* ':'| ') : ''}${c?.hashLabel||id} ${refs.length?`(${refs.join(', ')}) `:''}${c?.merge?'Merge commit':'commit'}${(c?.parents||[]).length===2?` [parents: ${c.parents.join(', ')}]`:''}`;
+        }));
+        return true;
+      }
+      case 'show': {
+        const id = a0 && this.commits[a0] ? a0 : this.tip();
+        const c = this.commits[id];
+        say(`commit ${id}`, `parents: ${(c.parents||[]).join(', ')||'(root)'}`, `branch lane: ${c.lane}`, 'diff: +12 −3 (simulated)');
+        return true;
+      }
+      case 'diff': {
+        if(line.includes('--staged')) say(...([...this.staged].length ? [...this.staged].map(f=>`+ staged changes in ${f}`) : ['(staging area matches HEAD)']));
+        else say(...(Object.keys(this.workdir).length ? Object.keys(this.workdir).map(f=>`± unstaged changes in ${f}`) : ['(working tree matches HEAD)']));
+        return true;
+      }
+      case 'blame': {
+        say(`${this.tip()} (you, just now)  1) the line you asked about`, `${chain(this.tip())[1]||'c0'} (you, earlier)   2) an older line`);
+        return true;
+      }
+      case 'reflog': {
+        say(...(this.reflog.length ? this.reflog.slice(0,10).map((e,i)=>`HEAD@{${i}}: ${e}`) : ['(reflog empty — do something first)']));
+        return true;
+      }
+      case 'describe': {
+        const t = Object.entries(this.tags).find(([n,id])=>this.isAncestor(id, this.tip()));
+        say(t ? `${t[0]}-${chain(this.tip()).indexOf(t[1])}-g${this.tip()}` : 'fatal: no tags can describe this commit. Tag something first.');
+        return true;
+      }
+      case 'shortlog': { say(`you (${this.seq+1}):`, ...chain(this.tip(),5).map(id=>`  ${id}`)); return true; }
+      case 'grep': { say(`${this.tip()}: (simulated match) — real git grep searches tracked file contents.`); return true; }
+      /* ----- bisect ----- */
+      case 'bisect': {
+        if(a0==='start'){
+          const ids = chain(this.tip(), 50).reverse();
+          if(ids.length<3){ this.ok=false; say('History too short to bisect — make more commits.'); return true; }
+          this.bisect = { ids, lo:0, hi:ids.length-1, culprit: Math.floor(ids.length/2) };
+          const mid = Math.floor((0+ids.length-1)/2);
+          this.bisect.mid = mid;
+          say(`Bisecting: ${ids.length} commits between good (${ids[0]}) and bad (${ids[ids.length-1]}).`, `Checked out ${ids[mid]} — test it, then: git bisect good | git bisect bad`);
+          return true;
+        }
+        if(!this.bisect){ this.ok=false; say('Start with: git bisect start'); return true; }
+        if(a0==='good'||a0==='bad'){
+          const b=this.bisect;
+          if(a0==='good') b.lo = b.mid; else b.hi = b.mid;
+          if(b.hi - b.lo <= 1){
+            say(`${b.ids[b.hi]} is the FIRST BAD COMMIT. 🎯`, `Found in log₂(${b.ids.length}) ≈ ${Math.ceil(Math.log2(b.ids.length))} steps. git bisect reset to finish.`);
+            this.bisect = null;
+            return true;
+          }
+          b.mid = Math.floor((b.lo+b.hi)/2);
+          say(`Bisecting: range narrowed to ${b.hi-b.lo} commits.`, `Checked out ${b.ids[b.mid]} — test and mark again.`);
+          return true;
+        }
+        if(a0==='reset'){ this.bisect=null; say('Bisect finished — HEAD restored.'); return true; }
+        this.ok=false; say('bisect subcommands: start, good, bad, reset'); return true;
+      }
+      /* ----- maintenance ----- */
+      case 'gc': case 'prune': {
+        const reach = this.reachable();
+        const orphans = Object.keys(this.commits).filter(id=>!reach.has(id) && !this.commits[id].remoteOnly);
+        orphans.forEach(id=>delete this.commits[id]);
+        say(orphans.length ? `Pruned ${orphans.length} unreachable object(s): ${orphans.join(', ')}` : 'Nothing to prune — everything is reachable.', 'Repo compacted.');
+        return true;
+      }
+      case 'fsck': {
+        const reach = this.reachable();
+        const dangling = Object.keys(this.commits).filter(id=>!reach.has(id) && !this.commits[id].remoteOnly);
+        say(...(dangling.length ? dangling.map(id=>`dangling commit ${id}`) : ['No corruption found — all objects verified.']));
+        return true;
+      }
+      case 'clean': {
+        const untracked = Object.entries(this.workdir).filter(([f,s])=>s==='untracked').map(([f])=>f);
+        untracked.forEach(f=>delete this.workdir[f]);
+        say(untracked.length ? `Removed untracked: ${untracked.join(', ')}` : 'Nothing untracked to clean.');
+        return true;
+      }
+      case 'maintenance': { say('Maintenance run complete: commit-graph refreshed, loose objects packed (simulated).'); return true; }
+      /* ----- plumbing ----- */
+      case 'rev-parse': { say(a0==='HEAD'||!a0 ? `${this.tip()} (full: ${this.tip()}00000000000000000000000000000000000)` : `${a0} → resolved (simulated)`); return true; }
+      case 'cat-file': {
+        const id = a1 && this.commits[a1] ? a1 : this.tip();
+        const c = this.commits[id];
+        say(`tree 4b825dc...`, ...(c.parents||[]).map(p=>`parent ${p}`), `author you <you@dev> just now`, '', 'commit message here');
+        return true;
+      }
+      case 'merge-base': {
+        if(!this.branches[a0] || !this.branches[a1]){ this.ok=false; say('Usage: git merge-base <branchA> <branchB>'); return true; }
+        let x = this.branches[a0];
+        while(x && !this.isAncestor(x, this.branches[a1])) x = (this.commits[x].parents||[])[0];
+        say(x ? `${x} — the common ancestor where ${a0} and ${a1} diverged.` : 'No common ancestor found.');
+        return true;
+      }
+      case 'ls-files': { say(...(this.trackedFiles.size ? [...this.trackedFiles] : ['(no tracked files in this sim — try: edit app.js → git add → git commit)'])); return true; }
+      case 'count-objects': { say(`count: ${Object.keys(this.commits).length} commits (objects), ${Object.keys(this.branches).length} branch refs, ${Object.keys(this.tags).length} tags`); return true; }
+      case 'hash-object': { say(`${(a0||'file').split('').reduce((a,c)=>a+c.charCodeAt(0),7).toString(16).padStart(7,'a')} (simulated content hash of ${a0||'stdin'})`); return true; }
+      /* ----- config / identity ----- */
+      case 'config': {
+        const flags = args.filter(a=>a.startsWith('--'));
+        const rest = args.filter(a=>!a.startsWith('--'));
+        if(rest[0]==='--list' || flags.includes('--list') || !rest.length){ say(...Object.entries(this.config).map(([k,v])=>`${k}=${v}`), ...(Object.keys(this.config).length?[]:['(empty config — set with: git config user.name "You")'])); return true; }
+        this.config[rest[0]] = rest.slice(1).join(' ') || '(set)';
+        say(`Config set: ${rest[0]} = ${this.config[rest[0]]}${flags.length?` [${flags.join(' ')}]`:''}`);
+        return true;
+      }
+      /* ----- stubs with honest simulated output ----- */
+      case 'init': { this.reset(); this.msg='Initialized empty Git repository (fresh sim).'; this.out=[this.msg]; return true; }
+      case '--version': case 'version': { say('git version 2.50.0 (playground simulation)'); return true; }
+      case 'format-patch': { say('0001-your-last-commit.patch written (simulated).', 'Apply on another machine with: git am 0001-*.patch'); return true; }
+      case 'am': case 'apply': { say('Patch applied (simulated) — in the real world this replays the patch file as a commit.'); return true; }
+      case 'bundle': { say('repo.bundle written (simulated) — a whole repo in one portable file. Clone from it offline.'); return true; }
+      case 'archive': { say('repo.tar exported (simulated) — code only, no .git history inside.'); return true; }
+      case 'notes': { say(`Note attached to ${this.tip()} (simulated) — metadata beside the commit, not inside it.`); return true; }
+      case 'worktree': { say('Second working folder created (simulated) — one repo, two checked-out branches at once.'); return true; }
+      case 'submodule': { say('Submodule linked (simulated) — a pointer to another repo at an exact commit.'); return true; }
+      case 'lfs': { say('LFS tracking enabled (simulated) — big binaries stored outside, pointers inside.'); return true; }
+      case 'filter-repo': case 'filter-branch': { say('History rewrite simulated — in real life this rewrites EVERY commit. Backup first, coordinate with the whole team.'); return true; }
+      case 'rerere': { say('rerere enabled (simulated) — git will remember how you resolved this conflict and reuse it.'); return true; }
+      case 'instaweb': { say('Local web UI started at http://localhost:1234 (simulated).'); return true; }
+      case 'request-pull': case 'send-email': { say('Patch email prepared (simulated) — the pre-GitHub collaboration flow.'); return true; }
+      case 'cherry': { say(`Comparing branches (simulated): + commits unique to yours, - already upstream.`); return true; }
+      case 'range-diff': { say('Comparing two versions of the commit range (simulated) — shows how a rebase changed each commit.'); return true; }
+      case 'help': {
+        say('── FULL PLAYGROUND COMMAND SET ──',
+          'files: edit <f> · git status · git add <f|.|-A|-u> · git restore [--staged] <f> · git rm/mv',
+          'save: git commit [-m "msg"] [--amend] [--allow-empty]',
+          'branch: git branch [name|-d|-D|-m] · git switch [-c] <x> · git checkout [-b] <x|commit>',
+          'combine: git merge [--no-ff|--squash] <x> · git rebase <x> · git rebase -i HEAD~n · git cherry-pick <id>',
+          'undo: git reset [--soft|--mixed|--hard] HEAD~n · git revert HEAD · git reflog',
+          'stash: git stash [push|pop|apply|list|drop|clear]',
+          'remote: git remote add origin <url> · git push [--force] · git fetch · git pull · teammate (!)',
+          'inspect: git log [--oneline|--graph] · show · diff [--staged] · blame <f> · describe · shortlog · merge-base a b',
+          'find bug: git bisect start → good/bad → reset',
+          'tags: git tag [name|-d name]',
+          'maintenance: git gc · prune · fsck · clean · count-objects',
+          'plumbing: git cat-file -p <id> · rev-parse HEAD · ls-files · hash-object <f>',
+          'meta: git config k v · git init · clear · help');
+        return true;
+      }
+      default: return false;
     }
   },
-  toStep(){
-    /* reachable commits only */
+  reachable(){
     const reach = new Set();
-    const roots = [...Object.values(this.branches), ...Object.values(this.tags)];
-    const stack = [...roots];
+    const stack = [...Object.values(this.branches), ...Object.values(this.tags), ...Object.values(this.remote?.branches||{}), this.detached].filter(Boolean);
     while(stack.length){
       const id = stack.pop();
       if(!id || reach.has(id)) continue; reach.add(id);
       (this.commits[id]?.parents || []).forEach(p=>stack.push(p));
     }
+    return reach;
+  },
+  toStep(){
+    const reach = this.reachable();
     /* depth = longest path from root */
     const depth = {};
     const d = (id)=>{
       if(depth[id] !== undefined) return depth[id];
-      const ps = this.commits[id].parents || [];
+      const ps = this.commits[id]?.parents || [];
       depth[id] = ps.length ? 1 + Math.max(...ps.map(d)) : 0;
       return depth[id];
     };
     const nodes = [], edges = [];
+    const fetched = this.fetched;
     reach.forEach(id=>{
       const c = this.commits[id];
-      const isTip = this.branches[this.head] === id;
-      nodes.push({ id, x: d(id), lane: c.lane, color: c.merge ? GC.warn : (c.lane===2 ? GC.main : GC.feat), hash: c.hashLabel || id, glow: isTip, pop: false });
-      (c.parents||[]).forEach(p=>{ if(reach.has(p)) edges.push([p, id]); });
+      if(!c) return;
+      if(c.remoteOnly && !fetched) return; /* unfetched teammate commits are invisible locally */
+      const isTip = this.tip() === id;
+      nodes.push({ id, x: d(id), lane: c.remoteOnly ? 0 : c.lane, color: c.merge ? GC.warn : c.remoteOnly ? GC.ink : (c.lane===2 ? GC.main : GC.feat), hash: c.hashLabel || id, glow: isTip, ghost: !!c.remoteOnly, pop: false });
+      (c.parents||[]).forEach(p=>{ if(reach.has(p) && this.commits[p] && !(this.commits[p].remoteOnly && !fetched)) edges.push([p, id]); });
     });
     const refs = [];
-    Object.entries(this.branches).forEach(([name, id], i)=>{
+    Object.entries(this.branches).forEach(([name, id])=>{
       refs.push({ name, node: id, color: name==='main' ? GC.main : GC.feat, below: false });
     });
-    refs.push({ name: 'HEAD', node: this.branches[this.head], color: GC.warn, below: true });
+    refs.push({ name: this.detached ? 'HEAD ⚠detached' : 'HEAD', node: this.tip(), color: this.detached ? GC.danger : GC.warn, below: true });
     Object.entries(this.tags).forEach(([name, id])=>{
       refs.push({ name: '🏷 '+name, node: id, color: GC.warn, below: true });
     });
-    return { nodes, edges, refs };
+    if(fetched) Object.entries(this.remote.branches||{}).forEach(([name, id])=>{
+      if(nodes.find(n=>n.id===id)) refs.push({ name: 'origin/'+name, node: id, color: GC.ink, below: name!=='main' });
+    });
+    return { nodes, edges, refs, remoteBox: fetched && Object.keys(this.remote.branches||{}).length > 0 };
+  },
+  hud(){
+    const chips = [];
+    const dirty = Object.keys(this.workdir);
+    if(dirty.length) chips.push(['📝 working dir', dirty.join(', ')]);
+    if(this.staged.size) chips.push(['🗂 staged', [...this.staged].join(', ')]);
+    if(this.stash.length) chips.push(['📦 stash', this.stash.map((s,i)=>`@{${i}}`).join(' ')]);
+    if(this.remote.url) chips.push(['☁ origin', Object.entries(this.remote.branches).map(([b,id])=>`${b}@${id}`).join(' ') || '(empty)']);
+    if(this.detached) chips.push(['⚠ detached HEAD', this.detached]);
+    if(this.bisect) chips.push(['🔍 bisecting', `${this.bisect.hi-this.bisect.lo} commits left`]);
+    return chips;
   },
 };
 PG.reset();
@@ -1506,25 +1930,26 @@ function renderPlayground(){
       <section class="panel graph-panel">
         <div class="panel-head"><span>Live commit graph</span><span id="pgStatus">Ready</span></div>
         <div class="icon-stage" id="pgStage"></div>
-        <div class="result-message" id="pgMsg" aria-live="polite"></div>
+        <div id="pgHud" style="display:flex; flex-wrap:wrap; gap:8px; padding:0 20px 10px;"></div>
         <div class="command-bar">
           <span class="command-prompt" aria-hidden="true">$</span>
           <input class="search-input command-input" id="pgInput" type="text" autocomplete="off" spellcheck="false"
-          placeholder="git commit · git branch feature · git switch feature · git merge main · git rebase main …"
+          placeholder='try: help · edit app.js · git add . · git commit -m "feat" · git push · teammate · git pull'
           aria-label="Git command input">
           <button class="btn primary" id="pgRun" type="button">Run</button>
         </div>
+        <div id="pgTerm" role="log" aria-live="polite" style="max-height:220px; overflow-y:auto; margin:0 20px 20px; padding:12px 14px; border:1px solid var(--border); border-radius:10px; background:rgba(0,0,0,0.35); font-family:var(--font-mono); font-size:12px; line-height:1.7; color:var(--color-text-secondary);"></div>
       </section>
       <aside class="playground-aside" aria-label="Playground guide">
         <div class="cat-context">
-          <div class="eyebrow">Graph mental model</div>
-          <p>Commits are immutable nodes. Branches are movable labels. HEAD is the label you are standing on. Merge connects histories; rebase replays commits with new ids; reset moves a label; revert writes an inverse commit.</p>
+          <div class="eyebrow">Full git simulation</div>
+          <p>This sandbox models the <b>whole machine</b>: working directory, staging area, commits, branches, detached HEAD, stash, tags, reflog, bisect, maintenance — and a remote with a simulated teammate. Type <code>help</code> for the complete command list.</p>
         </div>
         <section class="panel">
-          <div class="panel-head"><span>Command queue</span><span>Click to run</span></div>
+          <div class="panel-head"><span>Guided tours</span><span>Click to run</span></div>
           <div class="btn-row playground-examples" id="pgChips">
-            ${['git commit','git branch feature','git switch feature','git commit','git switch main','git merge feature','git rebase feature','git reset --hard HEAD~1','git revert HEAD','git tag v1.0','clear']
-              .map(c=>`<button class="btn" type="button" data-c="${c}">${c}</button>`).join('')}
+            ${['help','edit app.js','git status','git add .','git commit -m "feat: app"','git branch feature','git switch feature','git commit','git switch main','git merge feature','git rebase -i HEAD~2','git push','teammate','git fetch','git pull','git stash','git stash pop','git checkout c1','git bisect start','git reflog','git gc','clear']
+              .map(c=>`<button class="btn" type="button" data-c="${c.replace(/"/g,'&quot;')}">${c}</button>`).join('')}
           </div>
         </section>
       </aside>
@@ -1532,28 +1957,47 @@ function renderPlayground(){
   `;
   const stage = document.getElementById('pgStage');
   const input = document.getElementById('pgInput');
-  const msg = document.getElementById('pgMsg');
+  const term = document.getElementById('pgTerm');
+  const hudEl = document.getElementById('pgHud');
   const status = document.getElementById('pgStatus');
+  const histBuf = [];
+  let histIdx = -1;
   function refresh(){
     drawGraph(stage, PG.toStep());
-    msg.textContent = PG.msg;
-    msg.style.color = PG.ok ? 'var(--color-text-secondary)' : 'var(--accent-danger)';
-    status.textContent = `HEAD → ${PG.head} @ ${PG.tip()}`;
+    status.textContent = PG.detached ? `HEAD detached @ ${PG.tip()}` : `HEAD → ${PG.head} @ ${PG.tip()}`;
+    hudEl.innerHTML = PG.hud().map(([k,v])=>
+      `<span style="font-family:var(--font-mono); font-size:11px; padding:3px 10px; border:1px solid var(--border); border-radius:999px; color:var(--color-text-tertiary);"><b style="color:var(--color-text-secondary);">${k}</b> ${v}</span>`).join('');
+  }
+  function logTerm(cmd){
+    const block = document.createElement('div');
+    block.innerHTML = `<div style="color:var(--accent-2);">$ ${cmd.replace(/</g,'&lt;')}</div>` +
+      (PG.out||[]).map(l=>`<div style="color:${PG.ok?'var(--color-text-secondary)':'var(--accent-danger)'}; white-space:pre-wrap;">${String(l).replace(/</g,'&lt;')}</div>`).join('');
+    block.style.marginBottom = '8px';
+    term.appendChild(block);
+    term.scrollTop = term.scrollHeight;
   }
   function run(cmd){
     if(!cmd.trim()) return;
+    histBuf.push(cmd); histIdx = histBuf.length;
     PG.exec(cmd);
+    logTerm(cmd);
     refresh();
     input.value = '';
     input.focus();
   }
   document.getElementById('pgRun').addEventListener('click', ()=>run(input.value));
-  input.addEventListener('keydown', e=>{ if(e.key==='Enter') run(input.value); });
+  input.addEventListener('keydown', e=>{
+    if(e.key==='Enter') run(input.value);
+    if(e.key==='ArrowUp'){ if(histIdx>0){ histIdx--; input.value = histBuf[histIdx]; e.preventDefault(); } }
+    if(e.key==='ArrowDown'){ if(histIdx<histBuf.length-1){ histIdx++; input.value = histBuf[histIdx]; } else { histIdx=histBuf.length; input.value=''; } }
+  });
   document.getElementById('pgChips').addEventListener('click', e=>{
     const b = e.target.closest('[data-c]'); if(!b) return;
     input.value = b.dataset.c;
     run(b.dataset.c);
   });
+  PG.out = [PG.msg];
+  logTerm('git init');
   refresh();
   input.focus();
   history.replaceState(null, '', '#playground');
