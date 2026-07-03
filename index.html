@@ -3,289 +3,306 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Agentic Git — Command Reference</title>
-<meta name="description" content="Every git command, one sidebar, one animation each. Implementation-ready reference for developers.">
+<title>Git Workbench — Learn Git by Reading the Graph</title>
+<meta name="description" content="An expert-built Git workbench with 143 command guides, a live commit graph, and 112 hands-on practice drills.">
+<meta name="theme-color" content="#0a0d10">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* ============ DESIGN TOKENS (from DESIGN.md) ============ */
+/* Git Workbench design system */
 :root{
-  --font-primary: 'Inter var', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
-  --font-size-base: 19.25px;
-  --font-weight-base: 400;
-  --line-height-base: 32.725px;
-
-  --font-size-xs: 11px;   /* used as 11px floor, DESIGN.md's xs=0 is a bug guard */
-  --font-size-sm: 11px;
-  --font-size-md: 12px;
-  --font-size-lg: 13px;
-  --font-size-xl: 14px;
-  --font-size-2xl: 14.08px;
-  --font-size-3xl: 14.3px;
-  --font-size-4xl: 15.4px;
-
-  --color-text-primary: #fafafa;
-  --color-text-secondary: #d4d4d8;
-  --color-text-tertiary: #a1a1aa;
-  --color-text-inverse: #111827;
-  --color-surface-base: #000000;
-  --color-surface-muted: #ffffff;
-  --color-surface-raised: #07070d;
-
-  --space-1: 1px;
-  --space-2: 4.4px;
-  --space-3: 6px;
-  --space-4: 6.6px;
-  --space-5: 8px;
-  --space-6: 8.8px;
-  --space-7: 10px;
-  --space-8: 11px;
-  /* extended scale for macro layout, multiples of the base rhythm */
-  --space-10: 16px;
-  --space-12: 22px;
-  --space-16: 32px;
-  --space-20: 44px;
-
-  --radius-xs: 2.2px;
-  --radius-sm: 8px;
-  --radius-md: 10px;
-  --radius-lg: 12px;
-  --radius-xl: 14px;
-  --radius-2xl: 18px;
-  --radius-pill: 999px;
-
-  --shadow-1: rgba(0,0,0,0.25) 0px 4.4px 11px 0px, rgba(0,0,0,0.25) 0px 0px 1.1px 0px;
-  --shadow-2: rgba(15,23,42,0.08) 0px 1px 2px 0px;
-  --shadow-3: rgba(15,23,42,0.2) 0px 20px 60px 0px;
-  --shadow-4: rgba(15,23,42,0.04) 0px 10px 30px 0px;
-
-  --motion-instant: 120ms;
-  --motion-fast: 150ms;
-  --motion-normal: 160ms;
-  --motion-slow: 180ms;
-  --motion-slower: 200ms;
-  --motion-step6: 250ms;
-
-  --accent: #7c9eff;
-  --accent-2: #5eead4;
-  --accent-warn: #fbbf24;
-  --accent-danger: #f87171;
-  --border: rgba(255,255,255,0.09);
-  --border-strong: rgba(255,255,255,0.18);
+  color-scheme:dark;
+  --font-primary:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --font-mono:'JetBrains Mono','SFMono-Regular',Consolas,monospace;
+  --color-text-primary:#f0f3f6;
+  --color-text-secondary:#aeb8c3;
+  --color-text-tertiary:#77838f;
+  --color-text-inverse:#15191d;
+  --color-surface-base:#0a0d10;
+  --color-surface-muted:#1d242c;
+  --color-surface-raised:#12171d;
+  --surface-2:#171d24;
+  --surface-3:#1d242c;
+  --accent:#f05133;
+  --accent-hover:#ff684a;
+  --accent-soft:rgba(240,81,51,.12);
+  --accent-2:#2dd4bf;
+  --accent-warn:#d9a21b;
+  --accent-danger:#f85149;
+  --accent-remote:#58a6ff;
+  --border:#29323c;
+  --border-strong:#3b4652;
+  --space-1:4px;
+  --space-2:8px;
+  --space-3:12px;
+  --space-4:16px;
+  --space-5:20px;
+  --space-6:24px;
+  --space-7:28px;
+  --space-8:32px;
+  --space-10:40px;
+  --space-12:48px;
+  --space-16:64px;
+  --space-20:80px;
+  --radius-xs:3px;
+  --radius-sm:4px;
+  --radius-md:7px;
+  --radius-lg:10px;
+  --radius-xl:10px;
+  --radius-2xl:12px;
+  --radius-pill:999px;
+  --shadow-1:0 16px 40px rgba(0,0,0,.22);
+  --shadow-2:0 1px 0 rgba(255,255,255,.04) inset;
+  --shadow-3:0 24px 60px rgba(0,0,0,.35);
+  --shadow-4:none;
+  --motion-instant:120ms;
+  --motion-fast:150ms;
+  --motion-normal:180ms;
+  --motion-slow:240ms;
+  --motion-slower:280ms;
+  --motion-step6:320ms;
+  --sidebar-width:292px;
+  --topbar-height:58px;
 }
 
-*{ box-sizing:border-box; }
-html{ scroll-behavior:smooth; }
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--topbar-height) + var(--space-4));}
 body{
   margin:0;
+  min-width:320px;
   background:var(--color-surface-base);
   color:var(--color-text-primary);
   font-family:var(--font-primary);
   font-size:16px;
-  font-weight:var(--font-weight-base);
-  line-height:1.55;
+  font-weight:400;
+  line-height:1.625;
   -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
 }
-h1,h2,h3,h4{ font-family:var(--font-primary); font-weight:700; margin:0; color:var(--color-text-primary); letter-spacing:-0.01em; }
-p{ margin:0 0 0.8em; color:var(--color-text-secondary); }
-code,.mono{ font-family:var(--font-mono); }
-a{ color:var(--accent); }
-::selection{ background:var(--accent); color:#000; }
-
-/* focus-visible: required, never suppressed */
-:focus-visible{
-  outline:2px solid var(--accent);
-  outline-offset:2px;
-  border-radius:var(--radius-xs);
-}
-:focus:not(:focus-visible){ outline:none; }
+button,input{font:inherit;}
+h1,h2,h3,h4{margin:0;color:var(--color-text-primary);font-weight:600;letter-spacing:-.025em;}
+p{margin:0 0 1em;color:var(--color-text-secondary);}
+code,.mono{font-family:var(--font-mono);}
+a{color:var(--accent-hover);}
+::selection{background:rgba(240,81,51,.8);color:#fff;}
+:focus-visible{outline:2px solid var(--accent-hover);outline-offset:2px;border-radius:var(--radius-xs);}
+:focus:not(:focus-visible){outline:none;}
 
 .skip-link{
-  position:absolute; left:-999px; top:0; z-index:999;
-  background:var(--accent); color:#000; padding:var(--space-7) var(--space-10);
-  border-radius:var(--radius-sm); font-weight:600; text-decoration:none;
+  position:fixed;left:var(--space-4);top:-100px;z-index:1000;
+  background:var(--accent);color:#fff;padding:10px 14px;border-radius:var(--radius-md);
+  font-weight:600;text-decoration:none;transition:top var(--motion-fast) ease;
 }
-.skip-link:focus{ left:var(--space-10); top:var(--space-10); }
+.skip-link:focus{top:var(--space-4);}
 
-/* ============ APP SHELL ============ */
-.app{
-  display:grid;
-  grid-template-columns: 300px 1fr;
-  min-height:100vh;
+/* Application shell */
+.app{display:grid;grid-template-columns:var(--sidebar-width) minmax(0,1fr);min-height:100vh;}
+.workspace{min-width:0;}
+.workspace-bar{
+  position:sticky;top:0;z-index:40;height:var(--topbar-height);
+  display:flex;align-items:center;justify-content:space-between;gap:var(--space-4);
+  padding:0 clamp(var(--space-4),4vw,var(--space-8));
+  background:rgba(10,13,16,.92);border-bottom:1px solid var(--border);
+  backdrop-filter:blur(14px);
 }
-@media (max-width: 900px){
-  .app{ grid-template-columns:1fr; }
-  .sidebar{ position:relative; height:auto; max-height:52vh; }
+.repo-path{display:flex;align-items:center;min-width:0;gap:8px;font-size:14px;color:var(--color-text-tertiary);}
+.repo-path strong{overflow:hidden;color:var(--color-text-primary);font-weight:600;text-overflow:ellipsis;white-space:nowrap;}
+.repo-slash{color:var(--border-strong);}
+.workspace-meta{display:flex;align-items:center;gap:10px;}
+.branch-chip,.shortcut-hint{
+  display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 10px;
+  border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--color-surface-raised);
+  color:var(--color-text-secondary);font-family:var(--font-mono);font-size:11px;
 }
+.branch-chip::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--accent-2);box-shadow:0 0 0 3px rgba(45,212,191,.12);}
+.shortcut-hint{color:var(--color-text-tertiary);}
+.sidebar-toggle{
+  display:none;width:40px;height:40px;padding:0;border:1px solid var(--border);border-radius:var(--radius-md);
+  background:var(--color-surface-raised);color:var(--color-text-primary);cursor:pointer;
+}
+.sidebar-toggle svg{width:19px;height:19px;display:block;margin:auto;}
+.sidebar-backdrop{display:none;}
 
-/* ---------------- Sidebar ---------------- */
+/* Navigation rail */
 .sidebar{
-  background:var(--color-surface-raised);
-  border-right:1px solid var(--border);
-  position:sticky; top:0; height:100vh; overflow-y:auto;
-  padding:var(--space-10) var(--space-8) var(--space-16);
-  scrollbar-width:thin;
+  position:sticky;top:0;z-index:60;height:100vh;overflow-y:auto;overscroll-behavior:contain;
+  padding:18px 14px var(--space-8);background:#0e1217;border-right:1px solid var(--border);
+  scrollbar-width:thin;scrollbar-color:var(--border-strong) transparent;
 }
-.sidebar::-webkit-scrollbar{ width:7px; }
-.sidebar::-webkit-scrollbar-thumb{ background:var(--border-strong); border-radius:var(--radius-pill); }
-
-.brand{
-  display:flex; align-items:center; gap:var(--space-6);
-  padding:0 var(--space-3) var(--space-10);
-  margin-bottom:var(--space-8);
-  border-bottom:1px solid var(--border);
-}
+.sidebar::-webkit-scrollbar{width:7px;}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:var(--radius-pill);}
+.brand{display:flex;align-items:center;gap:12px;padding:0 6px 18px;margin-bottom:16px;border-bottom:1px solid var(--border);color:inherit;text-decoration:none;}
 .brand-mark{
-  width:32px; height:32px; border-radius:var(--radius-sm);
-  background:linear-gradient(135deg, var(--accent), var(--accent-2));
-  display:flex; align-items:center; justify-content:center; font-weight:800; color:#000; font-size:15px;
-  flex:0 0 auto;
+  display:grid;place-items:center;flex:0 0 auto;width:38px;height:38px;
+  border-radius:var(--radius-md);background:var(--accent);color:#fff;box-shadow:0 8px 24px rgba(240,81,51,.18);
 }
-.brand-text{ font-weight:700; font-size:15px; line-height:1.2; }
-.brand-text small{ display:block; font-weight:400; font-size:11px; color:var(--color-text-tertiary); margin-top:2px; }
-
-.search-wrap{ padding:0 var(--space-3); margin-bottom:var(--space-10); }
+.brand-mark svg{width:21px;height:21px;}
+.brand-text{min-width:0;font-size:15px;font-weight:600;line-height:1.2;letter-spacing:-.01em;}
+.brand-text small{display:block;margin-top:4px;color:var(--color-text-tertiary);font-family:var(--font-mono);font-size:10px;font-weight:400;letter-spacing:0;white-space:nowrap;}
+.search-wrap{margin:0 4px 12px;}
+.search-label{display:block;margin-bottom:7px;color:var(--color-text-tertiary);font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;}
+.search-shell{position:relative;display:flex;align-items:center;}
+.search-shell svg{position:absolute;left:11px;width:15px;height:15px;color:var(--color-text-tertiary);pointer-events:none;}
 .search-input{
-  width:100%; background:rgba(255,255,255,0.04); border:1px solid var(--border);
-  color:var(--color-text-primary); font-family:var(--font-primary); font-size:13px;
-  padding:var(--space-6) var(--space-7); border-radius:var(--radius-md);
-  transition:border-color var(--motion-fast) ease, background var(--motion-fast) ease;
+  width:100%;height:40px;padding:0 38px 0 34px;border:1px solid var(--border);border-radius:var(--radius-md);
+  background:var(--color-surface-raised);color:var(--color-text-primary);font-family:var(--font-primary);font-size:13px;
+  transition:border-color var(--motion-fast) ease,background var(--motion-fast) ease,box-shadow var(--motion-fast) ease;
 }
-.search-input::placeholder{ color:var(--color-text-tertiary); }
-.search-input:hover{ background:rgba(255,255,255,0.06); }
-.search-input:focus-visible{ border-color:var(--accent); background:rgba(255,255,255,0.06); }
-
-.stats-row{
-  display:flex; gap:var(--space-6); padding:0 var(--space-3); margin-bottom:var(--space-10);
-  font-size:11px; color:var(--color-text-tertiary);
-}
-.stats-row b{ color:var(--color-text-secondary); }
-
-.nav-groups{ list-style:none; margin:0; padding:0; }
-.nav-group{ margin-bottom:var(--space-3); }
+.search-input::placeholder{color:var(--color-text-tertiary);}
+.search-input:hover{background:var(--surface-2);}
+.search-input:focus-visible{border-color:var(--accent);background:var(--surface-2);box-shadow:0 0 0 3px var(--accent-soft);}
+.search-key{position:absolute;right:9px;color:var(--color-text-tertiary);font-family:var(--font-mono);font-size:10px;pointer-events:none;}
+.stats-row{display:flex;align-items:center;gap:8px;padding:0 5px 14px;color:var(--color-text-tertiary);font-family:var(--font-mono);font-size:10px;}
+.stats-row b{color:var(--color-text-secondary);font-weight:600;}
+.nav-groups{list-style:none;margin:0;padding:0;}
+.tool-nav{list-style:none;margin:0 0 14px;padding:0 0 14px;border-bottom:1px solid var(--border);}
+.nav-section-label{padding:0 8px 7px;color:var(--color-text-tertiary);font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;}
+.nav-group{margin:0 0 3px;}
 .nav-group summary{
-  list-style:none; cursor:pointer; display:flex; align-items:center; gap:var(--space-5);
-  padding:var(--space-6) var(--space-3); border-radius:var(--radius-md);
-  font-size:13px; font-weight:600; color:var(--color-text-secondary);
-  transition:background var(--motion-fast) ease, color var(--motion-fast) ease;
+  display:flex;align-items:center;min-height:40px;gap:9px;padding:6px 8px;border-radius:var(--radius-md);
+  color:var(--color-text-secondary);cursor:pointer;font-size:13px;font-weight:500;list-style:none;
+  transition:background var(--motion-fast) ease,color var(--motion-fast) ease;
 }
-.nav-group summary::-webkit-details-marker{ display:none; }
-.nav-group summary:hover{ background:rgba(255,255,255,0.045); color:var(--color-text-primary); }
-.nav-group summary .chev{ margin-left:auto; font-size:10px; color:var(--color-text-tertiary); transition:transform var(--motion-fast) ease; }
-.nav-group[open] summary .chev{ transform:rotate(90deg); }
-.nav-group .gicon{ font-size:15px; width:20px; text-align:center; flex:0 0 auto; }
-.nav-group .gcount{ font-size:10px; color:var(--color-text-tertiary); background:rgba(255,255,255,0.05); padding:1px 6px; border-radius:var(--radius-pill); }
-
-.nav-items{ list-style:none; margin:2px 0 var(--space-5); padding:0 0 0 calc(20px + var(--space-5)); display:flex; flex-direction:column; gap:1px; }
+.nav-group summary::-webkit-details-marker{display:none;}
+.nav-group summary:hover{background:var(--color-surface-raised);color:var(--color-text-primary);}
+.nav-group summary .chev{margin-left:auto;color:var(--color-text-tertiary);font-size:9px;transition:transform var(--motion-fast) ease;}
+.nav-group[open] summary .chev{transform:rotate(90deg);}
+.gicon{
+  display:grid;place-items:center;flex:0 0 auto;width:28px;height:24px;border:1px solid var(--border);border-radius:var(--radius-sm);
+  color:var(--color-text-tertiary);font-family:var(--font-mono);font-size:8px;font-weight:600;
+}
+.gcount{margin-left:auto;color:var(--color-text-tertiary);font-family:var(--font-mono);font-size:9px;}
+.nav-group summary .gcount + .chev{margin-left:0;}
+.nav-items{display:flex;flex-direction:column;gap:2px;list-style:none;margin:2px 0 8px;padding:0 0 0 37px;}
 .nav-item{
-  display:block; width:100%; text-align:left; background:none; border:none; cursor:pointer;
-  color:var(--color-text-tertiary); font-family:var(--font-mono); font-size:12px;
-  padding:var(--space-5) var(--space-6); border-radius:var(--radius-sm);
-  transition:background var(--motion-instant) ease, color var(--motion-instant) ease;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  display:block;width:100%;min-height:34px;padding:7px 9px;border:0;border-radius:var(--radius-sm);
+  background:transparent;color:var(--color-text-tertiary);cursor:pointer;text-align:left;
+  font-family:var(--font-mono);font-size:11px;line-height:1.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  transition:background var(--motion-instant) ease,color var(--motion-instant) ease,box-shadow var(--motion-instant) ease;
 }
-.nav-item:hover{ background:rgba(255,255,255,0.05); color:var(--color-text-secondary); }
-.nav-item[aria-current="true"]{ background:var(--accent); color:#000; font-weight:600; }
+.nav-item:hover{background:var(--color-surface-raised);color:var(--color-text-secondary);}
+.nav-item[aria-current="true"]{background:var(--accent-soft);color:#ff927d;font-weight:600;box-shadow:inset 2px 0 var(--accent);}
+.tool-link{display:grid;grid-template-columns:32px minmax(0,1fr);align-items:center;gap:10px;min-height:50px;padding:7px 8px;font-family:var(--font-primary);}
+.tool-link + .tool-link{margin-top:3px;}
+.tool-icon{display:grid;place-items:center;width:30px;height:30px;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--color-text-secondary);font-family:var(--font-mono);font-size:11px;}
+.tool-copy{display:block;min-width:0;}
+.tool-copy strong{display:block;color:inherit;font-size:13px;font-weight:600;}
+.tool-copy small{display:block;margin-top:1px;color:var(--color-text-tertiary);font-size:10px;font-weight:400;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
-/* ---------------- Main content ---------------- */
-.main{ padding:var(--space-20) clamp(var(--space-10), 5vw, 64px); max-width:900px; }
-
-.topbar{
-  display:none;
+/* Main workbench */
+.main{width:100%;max-width:1244px;margin:0 auto;padding:clamp(28px,4vw,48px) clamp(18px,4vw,48px) var(--space-20);}
+#content > :first-child{animation:viewEnter var(--motion-normal) ease-out both;}
+@keyframes viewEnter{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.command-header{margin-bottom:24px;}
+.crumb{display:flex;align-items:center;gap:7px;margin-bottom:10px;color:var(--color-text-tertiary);font-family:var(--font-mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;}
+.crumb .sep{color:var(--border-strong);}
+.crumb .cur{color:var(--accent-2);}
+.crumb button{padding:0;border:0;background:none;color:inherit;cursor:pointer;font:inherit;text-transform:inherit;}
+.cmd-title{max-width:980px;margin:0;color:var(--color-text-primary);font-family:var(--font-mono);font-size:clamp(25px,4vw,36px);font-weight:600;line-height:1.25;letter-spacing:-.035em;overflow-wrap:anywhere;}
+.command-overview{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);align-items:start;gap:16px;margin-bottom:24px;}
+.cat-context,.scenario-card{margin:0;padding:18px 20px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--color-surface-raised);}
+.scenario-card{border-left:3px solid var(--accent);background:var(--surface-2);}
+.cat-context .eyebrow,.scenario-card .label{margin-bottom:8px;color:var(--color-text-tertiary);font-size:10px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;}
+.scenario-card .label{color:#ff927d;}
+.cat-context p,.scenario-card p{margin:0;color:var(--color-text-secondary);font-size:14px;line-height:1.65;}
+.scenario-card p{color:var(--color-text-primary);font-size:15px;}
+.cat-context .analogy-line{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);color:var(--color-text-tertiary);font-size:12px;line-height:1.6;}
+.panel{overflow:hidden;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--color-surface-raised);box-shadow:var(--shadow-2);}
+.graph-panel{margin-bottom:24px;}
+.panel-head{display:flex;align-items:center;justify-content:space-between;min-height:43px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface-2);color:var(--color-text-tertiary);font-family:var(--font-mono);font-size:10px;letter-spacing:.09em;text-transform:uppercase;}
+.panel-head span:last-child{color:var(--color-text-secondary);}
+.icon-stage{
+  display:flex;align-items:center;justify-content:center;min-height:250px;padding:20px;cursor:default;
+  background-color:#0d1116;background-image:radial-gradient(rgba(119,131,143,.16) .7px,transparent .7px);background-size:18px 18px;
 }
-@media (max-width:900px){
-  .topbar{ display:block; padding:var(--space-8); border-bottom:1px solid var(--border); }
-}
-
-.crumb{
-  font-family:var(--font-mono); font-size:11px; letter-spacing:0.08em; text-transform:uppercase;
-  color:var(--color-text-tertiary); margin-bottom:var(--space-6);
-  display:flex; align-items:center; gap:var(--space-4);
-}
-.crumb .sep{ opacity:0.5; }
-.crumb .cur{ color:var(--accent-2); }
-
-.cmd-title{
-  font-family:var(--font-mono); font-size:clamp(22px,4vw,34px); font-weight:700;
-  color:var(--color-text-primary); margin-bottom:var(--space-10); line-height:1.3;
-  word-break:break-word;
-  background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:var(--radius-lg);
-  padding:var(--space-10) var(--space-12); box-shadow:var(--shadow-2);
-}
-
-.cat-context{
-  border:1px solid var(--border); border-radius:var(--radius-lg); padding:var(--space-10) var(--space-12);
-  margin-bottom:var(--space-10); background:rgba(255,255,255,0.02);
-}
-.cat-context .eyebrow{ font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--accent-2); font-weight:700; margin-bottom:var(--space-5); }
-.cat-context p{ font-size:14px; margin-bottom:var(--space-5); }
-.cat-context .analogy-line{ font-size:13px; color:var(--color-text-tertiary); font-style:italic; }
-
-.scenario-card{
-  border:1px solid var(--border); border-radius:var(--radius-xl); padding:var(--space-12);
-  margin-bottom:var(--space-10); background:linear-gradient(160deg, rgba(124,158,255,0.06), transparent);
-  box-shadow:var(--shadow-4);
-}
-.scenario-card .label{ font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent); font-weight:700; margin-bottom:var(--space-5); }
-.scenario-card p{ font-size:15px; color:var(--color-text-primary); margin:0; }
-
-.stage-grid{ display:grid; grid-template-columns:1fr 1fr; gap:var(--space-10); margin-bottom:var(--space-10); }
-@media (max-width:720px){ .stage-grid{ grid-template-columns:1fr; } }
-
-.panel{
-  border:1px solid var(--border); border-radius:var(--radius-xl); background:var(--color-surface-raised);
-  box-shadow:var(--shadow-1); overflow:hidden;
-}
-.panel-head{
-  padding:var(--space-6) var(--space-10); border-bottom:1px solid var(--border);
-  font-family:var(--font-mono); font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--color-text-tertiary);
-  display:flex; justify-content:space-between; align-items:center;
-}
-.icon-stage{ min-height:220px; display:flex; align-items:center; justify-content:center; padding:var(--space-10); cursor:crosshair; }
-.icon-stage:hover svg *{ animation-play-state:paused !important; }
-.terminal-body{
-  min-height:220px; padding:var(--space-10); font-family:var(--font-mono); font-size:13px;
-}
-.terminal-body .prompt{ color:var(--color-text-tertiary); }
-.terminal-body .typed{ color:var(--accent-2); }
-.terminal-body .tcursor{ display:inline-block; width:0.5em; height:1em; background:var(--accent-2); vertical-align:-0.15em; animation:blink 0.9s steps(1) infinite; }
-.terminal-body .out{ color:var(--color-text-tertiary); margin-top:var(--space-6); white-space:pre-wrap; line-height:1.5; }
-@keyframes blink{ 50%{ opacity:0; } }
-
-.btn-row{ display:flex; gap:var(--space-5); flex-wrap:wrap; margin-bottom:var(--space-10); }
+.icon-stage:hover svg *{animation-play-state:paused!important;}
+.icon-stage svg text{font-family:var(--font-mono);}
+.graph-caption{min-height:28px;padding:0 20px 12px;color:var(--color-text-secondary);font-size:13px;text-align:center;}
+.panel-controls{justify-content:center;padding:0 16px 16px;}
+.stage-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-bottom:24px;}
+.terminal-body{min-height:210px;padding:18px 20px;background:#0d1116;color:var(--color-text-secondary);font-family:var(--font-mono);font-size:13px;line-height:1.65;overflow:auto;}
+.terminal-body .prompt{color:var(--color-text-tertiary);}
+.terminal-body .typed{color:var(--accent-2);}
+.terminal-body .tcursor{display:inline-block;width:.48em;height:1em;background:var(--accent-2);vertical-align:-.14em;animation:blink .9s steps(1) infinite;}
+.terminal-body .out{display:inline;color:var(--color-text-tertiary);white-space:pre-wrap;}
+@keyframes blink{50%{opacity:0;}}
+.practice-panel{margin-bottom:24px;border-color:rgba(45,212,191,.36);}
+.practice-panel .panel-head{box-shadow:inset 3px 0 var(--accent-2);}
+.practice-task{padding:18px 20px 0;color:var(--color-text-primary);font-size:15px;}
+.result-message{min-height:30px;padding:0 20px 12px;color:var(--color-text-secondary);font-size:13px;text-align:center;}
+.command-bar{display:flex;align-items:center;gap:10px;padding:0 16px 12px;}
+.command-prompt{flex:0 0 auto;color:var(--accent-2);font-family:var(--font-mono);font-size:14px;}
+.command-input{flex:1;min-width:0;font-family:var(--font-mono);}
+.practice-actions{padding:0 16px 16px;}
+.btn-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
 .btn{
-  font-family:var(--font-mono); font-size:12px; font-weight:600;
-  background:rgba(255,255,255,0.04); border:1px solid var(--border); color:var(--color-text-primary);
-  padding:var(--space-6) var(--space-10); border-radius:var(--radius-pill); cursor:pointer;
-  transition:all var(--motion-fast) ease;
+  min-height:40px;padding:9px 13px;border:1px solid var(--border);border-radius:var(--radius-md);
+  background:var(--surface-2);color:var(--color-text-primary);cursor:pointer;font-family:var(--font-mono);font-size:11px;font-weight:600;
+  transition:border-color var(--motion-fast) ease,background var(--motion-fast) ease,color var(--motion-fast) ease,transform var(--motion-fast) ease,box-shadow var(--motion-fast) ease;
 }
-.btn:hover{ border-color:var(--accent); background:rgba(124,158,255,0.12); transform:translateY(-1px); }
-.btn:active{ transform:translateY(0); }
-.btn:disabled{ opacity:0.4; cursor:not-allowed; transform:none; }
-.btn.primary{ background:var(--accent); color:#000; border-color:var(--accent); }
-.btn.primary:hover{ box-shadow:0 6px 18px -6px rgba(124,158,255,0.6); }
-
-/* related commands list */
-.related-title{ font-size:12px; letter-spacing:0.1em; text-transform:uppercase; color:var(--color-text-tertiary); margin-bottom:var(--space-6); font-weight:700; }
-.related-list{ list-style:none; margin:0 0 var(--space-16); padding:0; display:grid; grid-template-columns:1fr 1fr; gap:var(--space-5); }
-@media (max-width:600px){ .related-list{ grid-template-columns:1fr; } }
+.btn:hover{border-color:var(--border-strong);background:var(--surface-3);transform:translateY(-1px);}
+.btn:active{transform:none;}
+.btn:disabled{opacity:.38;cursor:not-allowed;transform:none;}
+.btn.primary{border-color:var(--accent);background:var(--accent);color:#fff;}
+.btn.primary:hover{border-color:var(--accent-hover);background:var(--accent-hover);box-shadow:0 7px 20px rgba(240,81,51,.2);}
+.pager{justify-content:space-between;margin:0 0 32px;}
+.related-title{margin:0 0 10px;color:var(--color-text-tertiary);font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;}
+.related-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;list-style:none;margin:0 0 32px;padding:0;}
+.related-list > li{min-width:0;}
 .related-item{
-  border:1px solid var(--border); border-radius:var(--radius-md); padding:var(--space-6) var(--space-8);
-  cursor:pointer; background:rgba(255,255,255,0.015); transition:all var(--motion-fast) ease;
+  display:block;width:100%;min-height:68px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-md);
+  background:var(--color-surface-raised);color:inherit;cursor:pointer;text-align:left;
+  transition:border-color var(--motion-fast) ease,background var(--motion-fast) ease,transform var(--motion-fast) ease;
 }
-.related-item:hover{ border-color:var(--accent); background:rgba(124,158,255,0.06); transform:translateX(2px); }
-.related-item code{ display:block; color:var(--accent-2); font-size:12px; margin-bottom:2px; }
-.related-item span{ font-size:11px; color:var(--color-text-tertiary); display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.related-item:hover{border-color:var(--border-strong);background:var(--surface-2);transform:translateX(2px);}
+.related-item code{display:block;margin-bottom:3px;color:var(--accent-2);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.related-item span{display:block;color:var(--color-text-tertiary);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
-.empty-state{
-  text-align:center; padding:var(--space-20) var(--space-10); color:var(--color-text-tertiary);
+/* Arena and Playground */
+.arena-progress{margin-bottom:24px;padding:20px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--color-surface-raised);}
+.progress-meta{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:12px;}
+.progress-copy strong{display:block;color:var(--color-text-primary);font-size:20px;font-weight:600;}
+.progress-copy span{color:var(--color-text-tertiary);font-size:12px;}
+.progress-percent{color:var(--accent-2);font-family:var(--font-mono);font-size:14px;}
+.progress-track{width:100%;height:7px;border:0;border-radius:var(--radius-pill);background:var(--surface-3);overflow:hidden;appearance:none;}
+.progress-track::-webkit-progress-bar{background:var(--surface-3);}
+.progress-track::-webkit-progress-value{background:var(--accent-2);border-radius:var(--radius-pill);}
+.progress-track::-moz-progress-bar{background:var(--accent-2);border-radius:var(--radius-pill);}
+.arena-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:16px;}
+.arena-toolbar p{max-width:720px;margin:0;color:var(--color-text-secondary);font-size:13px;}
+.level-tabs{display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid var(--border);}
+.level-tab{position:relative;min-height:42px;padding:0 13px;border:0;background:transparent;color:var(--color-text-tertiary);cursor:pointer;font-size:13px;font-weight:500;}
+.level-tab[aria-selected="true"]{color:var(--color-text-primary);}
+.level-tab[aria-selected="true"]::after{content:'';position:absolute;right:0;bottom:-1px;left:0;height:2px;background:var(--accent);}
+.arena-level[hidden]{display:none;}
+.level-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:18px 0 10px;}
+.level-heading h2{font-size:18px;}
+.level-heading span{color:var(--color-text-tertiary);font-family:var(--font-mono);font-size:10px;}
+.drill-list{display:flex;flex-direction:column;gap:6px;list-style:none;margin:0 0 32px;padding:0;}
+.drill-row{
+  display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:13px;width:100%;min-height:66px;
+  padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--color-surface-raised);color:inherit;cursor:pointer;text-align:left;
+  transition:border-color var(--motion-fast) ease,background var(--motion-fast) ease,transform var(--motion-fast) ease;
 }
-.empty-state h2{ color:var(--color-text-secondary); margin-bottom:var(--space-6); }
+.drill-row:hover{border-color:var(--border-strong);background:var(--surface-2);transform:translateX(2px);}
+.drill-row.is-done{border-color:rgba(45,212,191,.3);}
+.drill-number{display:grid;place-items:center;width:36px;height:36px;border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--color-text-tertiary);font-family:var(--font-mono);font-size:10px;}
+.drill-row.is-done .drill-number{border-color:rgba(45,212,191,.35);background:rgba(45,212,191,.08);color:var(--accent-2);}
+.drill-copy strong{display:block;color:var(--color-text-primary);font-size:13px;font-weight:500;}
+.drill-copy span{display:block;margin-top:2px;color:var(--color-text-tertiary);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.drill-status{color:var(--color-text-tertiary);font-family:var(--font-mono);font-size:9px;text-transform:uppercase;}
+.drill-row.is-done .drill-status{color:var(--accent-2);}
+.playground-layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(260px,.55fr);gap:16px;margin-bottom:24px;}
+.playground-layout .graph-panel{margin:0;}
+.playground-aside{display:flex;flex-direction:column;gap:16px;}
+.playground-aside .cat-context{height:100%;}
+.playground-examples{display:flex;flex-direction:column;margin:0;padding:12px;}
+.playground-examples .btn{width:100%;text-align:left;}
+.empty-state{padding:64px 20px;color:var(--color-text-tertiary);text-align:center;}
+.empty-state h2{margin-bottom:8px;color:var(--color-text-secondary);}
 
-/* svg icon coloring */
-.icon-stage svg text{ font-family:var(--font-mono); }
+/* Existing scene motion */
 
 /* ---------------- Motion keyframes (reused per-category) ---------------- */
 @keyframes popIn{ 0%{transform:scale(0.3) rotate(-6deg); opacity:0;} 60%{transform:scale(1.15) rotate(2deg);} 100%{transform:scale(1) rotate(0); opacity:1;} }
@@ -310,27 +327,107 @@ a{ color:var(--accent); }
   position:absolute; top:0; width:8px; height:8px; border-radius:2px; pointer-events:none;
   animation:confettiFall var(--dur,1.4s) cubic-bezier(.2,.6,.6,1) forwards;
 }
+
+@media (max-width:1100px){
+  :root{--sidebar-width:248px;}
+  .command-overview,.playground-layout{grid-template-columns:1fr;}
+  .playground-examples{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));}
+}
+@media (max-width:840px){
+  :root{--topbar-height:54px;}
+  .app{display:block;}
+  .sidebar{
+    position:fixed;inset:0 auto 0 0;width:min(88vw,310px);height:100svh;box-shadow:var(--shadow-3);
+    transform:translateX(-105%);visibility:hidden;transition:none;
+  }
+  .sidebar.is-animating{transition:transform var(--motion-normal) ease,visibility var(--motion-normal) step-end;}
+  .sidebar[data-open="true"]{transform:translateX(0);visibility:visible;}
+  .sidebar[data-open="true"].is-animating{transition:transform var(--motion-normal) ease,visibility 0s;}
+  .sidebar-backdrop{position:fixed;inset:0;z-index:50;display:block;border:0;background:rgba(0,0,0,.58);opacity:0;pointer-events:none;transition:none;}
+  .sidebar-backdrop.is-animating{transition:opacity var(--motion-normal) ease;}
+  .sidebar-backdrop[data-open="true"]{opacity:1;pointer-events:auto;}
+  .sidebar-toggle{display:block;flex:0 0 auto;}
+  .nav-item,.nav-group summary{min-height:44px;}
+  .workspace-bar{padding:0 12px;}
+  .repo-path{margin-right:auto;}
+  .shortcut-hint{display:none;}
+  .main{padding:24px 16px 64px;}
+  .stage-grid{grid-template-columns:1fr;}
+  .workspace-meta{gap:6px;}
+  body.nav-open{overflow:hidden;}
+}
+@media (max-width:560px){
+  .branch-chip{display:none;}
+  .cmd-title{font-size:24px;line-height:1.35;}
+  .command-overview{gap:10px;margin-bottom:16px;}
+  .cat-context,.scenario-card{padding:15px 16px;}
+  .icon-stage{min-height:220px;padding:12px 8px;}
+  .stage-grid{gap:10px;margin-bottom:16px;}
+  .command-bar{align-items:stretch;flex-wrap:wrap;}
+  .command-prompt{align-self:center;}
+  .command-bar .btn.primary{margin-left:25px;flex:1 0 calc(100% - 25px);}
+  .btn{min-height:44px;}
+  .pager{display:grid;grid-template-columns:1fr 1fr;}
+  .related-list{grid-template-columns:1fr;}
+  .playground-examples{grid-template-columns:1fr;}
+  .drill-row{grid-template-columns:38px minmax(0,1fr);}
+  .drill-status{display:none;}
+  .arena-toolbar{align-items:stretch;flex-direction:column;}
+  .level-tabs{overflow-x:auto;}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto;}
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important;}
+  .terminal-body .tcursor{display:none;}
+}
 </style>
 </head>
 <body>
 <a href="#main" class="skip-link">Skip to content</a>
 
 <div class="app">
-  <nav class="sidebar" id="sidebar" aria-label="Git command categories">
-    <div class="brand">
-      <div class="brand-mark">⌥</div>
-      <div class="brand-text">Agentic Git<small>143 commands · 20 categories</small></div>
-    </div>
+  <nav class="sidebar" id="sidebar" aria-label="Git command categories" data-open="false">
+    <a class="brand" id="brandHome" href="#0-0" aria-label="Git Workbench command reference home">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="6" cy="5" r="2"></circle><circle cx="6" cy="19" r="2"></circle><circle cx="18" cy="8" r="2"></circle>
+          <path d="M6 7v10M8 7.5c5 0 3 3.5 8 3.5"></path>
+        </svg>
+      </div>
+      <div class="brand-text">Git Workbench<small>143 commands / 112 drills</small></div>
+    </a>
     <div class="search-wrap">
-      <input class="search-input" id="searchInput" type="search" placeholder="Search commands…" aria-label="Search commands">
+      <label class="search-label" for="searchInput">Command index</label>
+      <div class="search-shell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+        <input class="search-input" id="searchInput" type="search" placeholder="Search Git…" aria-label="Search Git commands">
+        <span class="search-key" aria-hidden="true">/</span>
+      </div>
     </div>
     <div class="stats-row" id="statsRow"></div>
     <ul class="nav-groups" id="navGroups"></ul>
   </nav>
 
-  <main class="main" id="main">
-    <div id="content"></div>
-  </main>
+  <button class="sidebar-backdrop" id="sidebarBackdrop" type="button" aria-label="Close command navigation" data-open="false"></button>
+
+  <div class="workspace">
+    <header class="workspace-bar">
+      <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Open command navigation" aria-controls="sidebar" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+      </button>
+      <div class="repo-path" aria-label="Current learning repository">
+        <span>workbench</span><span class="repo-slash">/</span><strong>git-learning</strong>
+      </div>
+      <div class="workspace-meta">
+        <span class="shortcut-hint">/ search · ← → step</span>
+        <span class="branch-chip">main</span>
+      </div>
+    </header>
+
+    <main class="main" id="main">
+      <div id="content"></div>
+    </main>
+  </div>
 </div>
 
 <script>
@@ -347,15 +444,54 @@ CATEGORIES.forEach((cat, ci)=>{
 const navGroups = document.getElementById('navGroups');
 const contentEl = document.getElementById('content');
 const statsRow = document.getElementById('statsRow');
-statsRow.innerHTML = `<span><b>${ALL.length}</b> commands</span><span>·</span><span><b>${CATEGORIES.length}</b> categories</span>`;
+statsRow.innerHTML = `<span><b>${ALL.length}</b> commands</span><span>·</span><span><b>${CATEGORIES.length}</b> paths</span>`;
+
+/* responsive navigation drawer + command-search shortcut */
+const sidebar = document.getElementById('sidebar');
+const sidebarToggle = document.getElementById('sidebarToggle');
+const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+const searchInput = document.getElementById('searchInput');
+const brandHome = document.getElementById('brandHome');
+function setSidebar(open){
+  sidebar.classList.add('is-animating');
+  sidebarBackdrop.classList.add('is-animating');
+  sidebar.dataset.open = String(open);
+  sidebarBackdrop.dataset.open = String(open);
+  sidebarToggle.setAttribute('aria-expanded', String(open));
+  sidebarToggle.setAttribute('aria-label', open ? 'Close command navigation' : 'Open command navigation');
+  document.body.classList.toggle('nav-open', open);
+  clearTimeout(setSidebar.timer);
+  setSidebar.timer = setTimeout(()=>{
+    sidebar.classList.remove('is-animating');
+    sidebarBackdrop.classList.remove('is-animating');
+  }, 220);
+}
+sidebarToggle.addEventListener('click', ()=>setSidebar(sidebar.dataset.open !== 'true'));
+sidebarBackdrop.addEventListener('click', ()=>setSidebar(false));
+brandHome.addEventListener('click', e=>{
+  e.preventDefault();
+  render(ALL[0].id);
+  setSidebar(false);
+  window.scrollTo(0,0);
+});
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape') setSidebar(false);
+  if(e.key === '/' && !['INPUT','TEXTAREA'].includes(e.target.tagName)){
+    e.preventDefault();
+    if(window.matchMedia('(max-width: 840px)').matches) setSidebar(true);
+    requestAnimationFrame(()=>searchInput.focus());
+  }
+});
 
 /* build sidebar */
 const pgLi = document.createElement('li');
-pgLi.innerHTML = `<button class="nav-item" id="pgNavBtn" style="font-family:var(--font-primary); font-weight:700; font-size:13px; color:var(--accent-2); padding:var(--space-6) var(--space-3);">⚡ Playground — type commands live</button>
-<button class="nav-item" id="arenaNavBtn" style="font-family:var(--font-primary); font-weight:700; font-size:13px; color:var(--accent-warn); padding:var(--space-6) var(--space-3); margin-bottom:var(--space-5);">🎯 Practice Arena — 100+ scenarios</button>`;
+pgLi.className = 'tool-nav';
+pgLi.innerHTML = `<div class="nav-section-label">Workspaces</div>
+<button class="nav-item tool-link" id="pgNavBtn" type="button"><span class="tool-icon">&gt;_</span><span class="tool-copy"><strong>Playground</strong><small>Run commands on a live graph</small></span></button>
+<button class="nav-item tool-link" id="arenaNavBtn" type="button"><span class="tool-icon">112</span><span class="tool-copy"><strong>Practice Arena</strong><small>Validated scenario drills</small></span></button>`;
 navGroups.appendChild(pgLi);
-pgLi.querySelector('#pgNavBtn').addEventListener('click', ()=>{ renderPlayground(); window.scrollTo(0,0); });
-pgLi.querySelector('#arenaNavBtn').addEventListener('click', ()=>{ renderArena(); window.scrollTo(0,0); });
+pgLi.querySelector('#pgNavBtn').addEventListener('click', ()=>{ renderPlayground(); setSidebar(false); window.scrollTo(0,0); });
+pgLi.querySelector('#arenaNavBtn').addEventListener('click', ()=>{ renderArena(); setSidebar(false); window.scrollTo(0,0); });
 
 CATEGORIES.forEach((cat, ci)=>{
   const li = document.createElement('li');
@@ -363,9 +499,9 @@ CATEGORIES.forEach((cat, ci)=>{
   const details = document.createElement('details');
   details.open = ci === 0;
   details.innerHTML = `
-    <summary><span class="gicon">${cat.icon}</span><span>${cat.name}</span><span class="gcount">${cat.items.length}</span><span class="chev">▸</span></summary>
+    <summary><span class="gicon">${cat.num}</span><span>${cat.name}</span><span class="gcount">${cat.items.length}</span><span class="chev">▸</span></summary>
     <ul class="nav-items">
-      ${cat.items.map((it,ii)=>`<li><button class="nav-item" data-id="${ci}-${ii}">${it[0]}</button></li>`).join('')}
+      ${cat.items.map((it,ii)=>`<li><button class="nav-item" type="button" data-id="${ci}-${ii}">${it[0]}</button></li>`).join('')}
     </ul>
   `;
   li.appendChild(details);
@@ -374,12 +510,13 @@ CATEGORIES.forEach((cat, ci)=>{
 
 navGroups.addEventListener('click', (e)=>{
   const btn = e.target.closest('.nav-item');
-  if(!btn) return;
+  if(!btn || !btn.dataset.id) return;
   render(btn.dataset.id);
+  setSidebar(false);
 });
 
 /* search filter */
-document.getElementById('searchInput').addEventListener('input', (e)=>{
+searchInput.addEventListener('input', (e)=>{
   const q = e.target.value.trim().toLowerCase();
   document.querySelectorAll('.nav-group').forEach((groupLi, ci)=>{
     const details = groupLi.querySelector('details');
@@ -404,7 +541,7 @@ document.getElementById('searchInput').addEventListener('input', (e)=>{
    Nodes: {id, x, lane, color, hash, ghost, glow, cross}
    Lanes: 0=remote (dashed area), 1=feature, 2=main, 3=stash/extra
    ============================================================ */
-const GC = { main:'#7c9eff', feat:'#5eead4', warn:'#fbbf24', danger:'#f87171', ghost:'rgba(255,255,255,0.22)', ink:'#a1a1aa' };
+const GC = { main:'#f05133', feat:'#2dd4bf', remote:'#58a6ff', warn:'#d9a21b', danger:'#f85149', ghost:'rgba(174,184,195,0.24)', ink:'#77838f' };
 const LANE_Y = { 0:46, 1:96, 2:146, 3:196 };
 
 function N(id, x, lane, color, opts={}){ return Object.assign({id, x, lane, color, hash:id}, opts); }
@@ -413,7 +550,7 @@ const SVGNS = 'http://www.w3.org/2000/svg';
 
 function confettiBurst(hostEl){
   hostEl.style.position = 'relative'; hostEl.style.overflow = 'hidden';
-  const colors = ['#7c9eff','#5eead4','#fbbf24','#f472b6','#a78bfa'];
+  const colors = ['#f05133','#2dd4bf','#58a6ff','#d9a21b','#f0f3f6'];
   for(let i=0;i<28;i++){
     const b = document.createElement('div');
     b.className = 'confetti-bit';
@@ -1218,7 +1355,7 @@ const ARENA = buildArena();
 const ARENA_KEY = 'git-arena-done';
 const arenaDone = ()=> JSON.parse(localStorage.getItem(ARENA_KEY) || '{}');
 
-function renderArena(){
+function renderArena(activeLevel='Beginner'){
   document.onkeydown = null;
   document.querySelectorAll('.nav-item').forEach(b=>b.removeAttribute('aria-current'));
   const abtn = document.getElementById('arenaNavBtn');
@@ -1226,28 +1363,49 @@ function renderArena(){
   const done = arenaDone();
   const doneCount = ARENA.filter(e=>done[e.id]).length;
   const levels = ['Beginner','Intermediate','Advanced'];
+  if(!levels.includes(activeLevel)) activeLevel = 'Beginner';
+  const nextDrill = ARENA.find(e=>!done[e.id]) || ARENA[0];
+  const percent = Math.round(doneCount/ARENA.length*100);
   contentEl.innerHTML = `
-    <div class="crumb"><span>🎯 Practice Arena</span><span class="sep">/</span><span class="cur">${ARENA.length} scenario drills</span></div>
-    <h1 class="cmd-title">Practice Arena — ${ARENA.length} scenarios</h1>
-    <div class="cat-context" style="margin-bottom:var(--space-10);">
-      <div class="eyebrow">progress</div>
-      <p><b>${doneCount} / ${ARENA.length}</b> completed. Each drill drops you into a prepared repo with a story — type the commands that reach the goal. Progress saves in your browser.</p>
-      <div style="height:8px; border-radius:999px; background:rgba(255,255,255,0.06); overflow:hidden;">
-        <div style="height:100%; width:${Math.round(doneCount/ARENA.length*100)}%; background:linear-gradient(90deg,var(--accent),var(--accent-2)); transition:width .4s ease;"></div>
+    <header class="command-header">
+      <nav class="crumb" aria-label="Breadcrumb"><span>Workbench</span><span class="sep">/</span><span class="cur">Practice Arena</span></nav>
+      <h1 class="cmd-title">Build Git instincts in ${ARENA.length} real repositories.</h1>
+    </header>
+    <section class="arena-progress" aria-labelledby="arenaProgressTitle">
+      <div class="progress-meta">
+        <div class="progress-copy"><strong id="arenaProgressTitle">${doneCount} of ${ARENA.length} complete</strong><span>Progress is saved in this browser.</span></div>
+        <span class="progress-percent">${percent}%</span>
       </div>
+      <progress class="progress-track" value="${doneCount}" max="${ARENA.length}" aria-label="Arena completion">${percent}%</progress>
+      <div class="arena-toolbar">
+        <p>Every drill starts from a prepared commit graph and validates the repository state, not just the command text.</p>
+        <button class="btn primary" id="continueDrill" type="button" data-drill="${nextDrill.id}">${doneCount ? 'Continue training' : 'Start first drill'} →</button>
+      </div>
+    </section>
+    <div class="level-tabs" role="tablist" aria-label="Practice level">
+      ${levels.map(lv=>`<button class="level-tab" type="button" role="tab" data-level-tab="${lv}" aria-selected="${lv===activeLevel}">${lv} · ${ARENA.filter(e=>e.level===lv).length}</button>`).join('')}
     </div>
     ${levels.map(lv=>`
-      <div class="related-title" style="margin-top:var(--space-12);">${lv} — ${ARENA.filter(e=>e.level===lv).length} drills</div>
-      <ul class="related-list" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr));">
+      <section class="arena-level" data-level-panel="${lv}" ${lv===activeLevel?'':'hidden'}>
+        <div class="level-heading"><h2>${lv}</h2><span>${ARENA.filter(e=>e.level===lv && done[e.id]).length}/${ARENA.filter(e=>e.level===lv).length} complete</span></div>
+        <ul class="drill-list">
         ${ARENA.filter(e=>e.level===lv).map(e=>`
-          <li class="related-item" data-drill="${e.id}" style="${done[e.id]?'border-color:rgba(94,234,212,0.5);':''}">
-            <code>${done[e.id]?'✅ ':''}#${e.id+1} · ${e.title}</code>
-            <span>${e.story.replace('Scenario: ','')}</span>
-          </li>`).join('')}
-      </ul>`).join('')}
+          <li><button class="drill-row ${done[e.id]?'is-done':''}" type="button" data-drill="${e.id}">
+            <span class="drill-number">${String(e.id+1).padStart(3,'0')}</span>
+            <span class="drill-copy"><strong>${e.title}</strong><span>${e.story.replace('Scenario: ','')}</span></span>
+            <span class="drill-status">${done[e.id]?'Completed':'Open drill'}</span>
+          </button></li>`).join('')}
+        </ul>
+      </section>`).join('')}
   `;
   contentEl.querySelectorAll('[data-drill]').forEach(el=>{
     el.addEventListener('click', ()=>{ renderDrill(parseInt(el.dataset.drill,10)); window.scrollTo(0,0); });
+  });
+  contentEl.querySelectorAll('[data-level-tab]').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      contentEl.querySelectorAll('[data-level-tab]').forEach(t=>t.setAttribute('aria-selected', String(t===tab)));
+      contentEl.querySelectorAll('[data-level-panel]').forEach(panel=>panel.hidden = panel.dataset.levelPanel !== tab.dataset.levelTab);
+    });
   });
   history.replaceState(null, '', '#arena');
 }
@@ -1256,31 +1414,36 @@ function renderDrill(idx){
   const ex = ARENA[idx];
   if(!ex){ renderArena(); return; }
   document.onkeydown = null;
+  document.querySelectorAll('.nav-item').forEach(b=>b.removeAttribute('aria-current'));
+  const abtn = document.getElementById('arenaNavBtn');
+  if(abtn) abtn.setAttribute('aria-current','true');
   contentEl.innerHTML = `
-    <div class="crumb"><span style="cursor:pointer" id="backToArena">🎯 Practice Arena</span><span class="sep">/</span><span class="cur">drill #${idx+1} · ${ex.level}</span></div>
-    <h1 class="cmd-title">#${idx+1} — ${ex.title}</h1>
-    <div class="scenario-card">
-      <div class="label">Scenario</div>
-      <p>${ex.story}</p>
+    <header class="command-header">
+      <nav class="crumb" aria-label="Breadcrumb"><button type="button" id="backToArena">Practice Arena</button><span class="sep">/</span><span class="cur">${ex.level} · drill ${idx+1}</span></nav>
+      <h1 class="cmd-title">${ex.title}</h1>
+    </header>
+    <div class="command-overview">
+      <div class="scenario-card"><div class="label">Repository story</div><p>${ex.story}</p></div>
+      <div class="cat-context"><div class="eyebrow">How validation works</div><p>Your command changes a real commit graph. The drill passes only when the target repository state is true.</p></div>
     </div>
-    <div class="panel" style="margin-bottom:var(--space-10); border-color:rgba(94,234,212,0.35);">
-      <div class="panel-head" style="color:var(--accent-2);"><span>🎯 Reach the goal</span><span id="exStatus">in progress</span></div>
-      <div class="icon-stage" id="exStage" style="min-height:230px;"></div>
-      <div id="exMsg" style="padding:0 var(--space-12); margin-bottom:var(--space-6); min-height:1.5em; font-size:13px; color:var(--color-text-secondary); text-align:center;"></div>
-      <div style="padding:0 var(--space-12) var(--space-8); display:flex; gap:var(--space-5);">
-        <span style="font-family:var(--font-mono); color:var(--accent-2); align-self:center;">$</span>
-        <input class="search-input" id="exInput" type="text" autocomplete="off" spellcheck="false"
-          placeholder="type git commands to reach the goal…" aria-label="Drill command input" style="font-family:var(--font-mono); flex:1;">
-        <button class="btn primary" id="exRun">Run</button>
+    <section class="panel graph-panel practice-panel">
+      <div class="panel-head"><span>Target repository</span><span id="exStatus" role="status">In progress</span></div>
+      <div class="icon-stage" id="exStage"></div>
+      <div class="result-message" id="exMsg" aria-live="polite"></div>
+      <div class="command-bar">
+        <span class="command-prompt" aria-hidden="true">$</span>
+        <input class="search-input command-input" id="exInput" type="text" autocomplete="off" spellcheck="false"
+          placeholder="Type a Git command to change the graph…" aria-label="Drill command input">
+        <button class="btn primary" id="exRun" type="button">Run</button>
       </div>
-      <div class="btn-row" style="padding:0 var(--space-12) var(--space-12);">
-        <button class="btn" id="exHint">💡 Hint</button>
-        <button class="btn" id="exReset">↺ Restart</button>
-        <button class="btn" id="exNext">Next drill →</button>
+      <div class="btn-row practice-actions">
+        <button class="btn" id="exHint" type="button">Show hint</button>
+        <button class="btn" id="exReset" type="button">↺ Restart</button>
+        <button class="btn" id="exNext" type="button">Next drill →</button>
       </div>
-    </div>
+    </section>
   `;
-  document.getElementById('backToArena').addEventListener('click', renderArena);
+  document.getElementById('backToArena').addEventListener('click', ()=>renderArena(ex.level));
   document.getElementById('exNext').addEventListener('click', ()=>{ renderDrill((idx+1)%ARENA.length); window.scrollTo(0,0); });
   const stage = document.getElementById('exStage');
   const msgEl = document.getElementById('exMsg');
@@ -1289,7 +1452,7 @@ function renderDrill(idx){
   let repo, solved;
   function refresh(){
     drawGraph(stage, repo.toStep());
-    statusEl.textContent = solved ? '✅ passed' : `HEAD → ${repo.head} @ ${repo.tip()}`;
+    statusEl.textContent = solved ? 'Passed' : `HEAD → ${repo.head} @ ${repo.tip()}`;
     statusEl.style.color = solved ? 'var(--accent-2)' : '';
   }
   function start(){
@@ -1305,7 +1468,7 @@ function renderDrill(idx){
     repo.exec(cmd);
     if(ex.goal(repo)){
       solved = true;
-      msgEl.innerHTML = '✅ <b>' + ex.win + '</b>';
+      msgEl.innerHTML = '<b>Passed.</b> ' + ex.win;
       msgEl.style.color = 'var(--accent-2)';
       input.disabled = true;
       confettiBurst(stage);
@@ -1321,7 +1484,7 @@ function renderDrill(idx){
   }
   document.getElementById('exRun').addEventListener('click', ()=>run(input.value));
   input.addEventListener('keydown', e=>{ if(e.key==='Enter') run(input.value); });
-  document.getElementById('exHint').addEventListener('click', ()=>{ msgEl.innerHTML = '💡 ' + ex.hint; msgEl.style.color = 'var(--accent-warn)'; });
+  document.getElementById('exHint').addEventListener('click', ()=>{ msgEl.innerHTML = '<b>Hint:</b> ' + ex.hint; msgEl.style.color = 'var(--accent-warn)'; });
   document.getElementById('exReset').addEventListener('click', start);
   start();
   history.replaceState(null, '', '#arena-'+idx);
@@ -1333,28 +1496,36 @@ function renderPlayground(){
   const pgBtn = document.getElementById('pgNavBtn');
   if(pgBtn) pgBtn.setAttribute('aria-current','true');
   contentEl.innerHTML = `
-    <div class="crumb"><span>⚡ Playground</span><span class="sep">/</span><span class="cur">interactive sandbox</span></div>
-    <h1 class="cmd-title">Type git commands. Watch the graph react.</h1>
-    <div class="panel" style="margin-bottom:var(--space-10);">
-      <div class="panel-head"><span>Live commit graph</span><span id="pgStatus">ready</span></div>
-      <div class="icon-stage" id="pgStage" style="min-height:250px;"></div>
-      <div id="pgMsg" style="padding:0 var(--space-12); margin-bottom:var(--space-8); min-height:1.5em; font-size:13px; color:var(--color-text-secondary); text-align:center;"></div>
-      <div style="padding:0 var(--space-12) var(--space-12); display:flex; gap:var(--space-5);">
-        <span style="font-family:var(--font-mono); color:var(--accent-2); align-self:center;">$</span>
-        <input class="search-input" id="pgInput" type="text" autocomplete="off" spellcheck="false"
+    <header class="command-header">
+      <nav class="crumb" aria-label="Breadcrumb"><span>Workbench</span><span class="sep">/</span><span class="cur">Playground</span></nav>
+      <h1 class="cmd-title">Run Git. Read the graph.</h1>
+    </header>
+    <div class="playground-layout">
+      <section class="panel graph-panel">
+        <div class="panel-head"><span>Live commit graph</span><span id="pgStatus">Ready</span></div>
+        <div class="icon-stage" id="pgStage"></div>
+        <div class="result-message" id="pgMsg" aria-live="polite"></div>
+        <div class="command-bar">
+          <span class="command-prompt" aria-hidden="true">$</span>
+          <input class="search-input command-input" id="pgInput" type="text" autocomplete="off" spellcheck="false"
           placeholder="git commit · git branch feature · git switch feature · git merge main · git rebase main …"
-          aria-label="Git command input" style="font-family:var(--font-mono); flex:1;">
-        <button class="btn primary" id="pgRun">Run</button>
-      </div>
-    </div>
-    <div class="related-title">Try these</div>
-    <div class="btn-row" id="pgChips">
-      ${['git commit','git branch feature','git switch feature','git commit','git commit','git switch main','git commit','git merge feature','git rebase feature','git reset --hard HEAD~1','git revert HEAD','git tag v1.0','clear']
-        .map(c=>`<button class="btn" data-c="${c}">${c}</button>`).join('')}
-    </div>
-    <div class="cat-context" style="margin-top:var(--space-10);">
-      <div class="eyebrow">what this teaches</div>
-      <p>This is a real (simplified) git model: commits are immutable nodes pointing at parents; branches are just movable labels; HEAD is "the label you're standing on". Merge creates a two-parent node (or fast-forwards when possible), rebase replays your commits with <b>new ids</b>, reset moves a label backwards and strands commits, revert adds an anti-commit. Type <code>clear</code> to start over.</p>
+          aria-label="Git command input">
+          <button class="btn primary" id="pgRun" type="button">Run</button>
+        </div>
+      </section>
+      <aside class="playground-aside" aria-label="Playground guide">
+        <div class="cat-context">
+          <div class="eyebrow">Graph mental model</div>
+          <p>Commits are immutable nodes. Branches are movable labels. HEAD is the label you are standing on. Merge connects histories; rebase replays commits with new ids; reset moves a label; revert writes an inverse commit.</p>
+        </div>
+        <section class="panel">
+          <div class="panel-head"><span>Command queue</span><span>Click to run</span></div>
+          <div class="btn-row playground-examples" id="pgChips">
+            ${['git commit','git branch feature','git switch feature','git commit','git switch main','git merge feature','git rebase feature','git reset --hard HEAD~1','git revert HEAD','git tag v1.0','clear']
+              .map(c=>`<button class="btn" type="button" data-c="${c}">${c}</button>`).join('')}
+          </div>
+        </section>
+      </aside>
     </div>
   `;
   const stage = document.getElementById('pgStage');
@@ -1511,63 +1682,66 @@ function render(id){
 
   const cat = item.cat;
   contentEl.innerHTML = `
-    <div class="crumb"><span>${cat.icon} ${cat.name}</span><span class="sep">/</span><span class="cur">${item.cmd}</span></div>
-    <h1 class="cmd-title">${item.cmd}</h1>
-    <div class="cat-context">
-      <div class="eyebrow">about this room</div>
-      <p>${cat.desc}</p>
-      ${cat.analogy ? `<div class="analogy-line">${cat.analogy}</div>` : ''}
-    </div>
-    <div class="scenario-card">
-      <div class="label">Scenario</div>
-      <p>${item.scenario}</p>
-    </div>
-    <div class="panel" style="margin-bottom:var(--space-10);">
-      <div class="panel-head"><span>Commit graph — what this command does</span><span id="stepLabel">step 1 / 3</span></div>
-      <div class="icon-stage" id="iconStage" style="min-height:250px;"></div>
-      <div id="stepCaption" style="padding:0 var(--space-12); margin-bottom:var(--space-6); min-height:1.5em; font-size:13px; color:var(--color-text-secondary); text-align:center;"></div>
-      <div class="btn-row" style="padding:0 var(--space-12) var(--space-12); justify-content:center;">
-        <button class="btn" id="stepPrevBtn">◂ Step</button>
-        <button class="btn" id="stepNextBtn">Step ▸</button>
-        <button class="btn primary" id="replayBtn">▶ Autoplay</button>
+    <header class="command-header">
+      <nav class="crumb" aria-label="Breadcrumb"><span>Path ${cat.num}</span><span class="sep">/</span><span>${cat.name}</span><span class="sep">/</span><span class="cur">Command ${currentIndex+1} of ${ALL.length}</span></nav>
+      <h1 class="cmd-title">${item.cmd}</h1>
+    </header>
+    <div class="command-overview">
+      <div class="scenario-card">
+        <div class="label">When an expert reaches for this</div>
+        <p>${item.scenario}</p>
+      </div>
+      <div class="cat-context">
+        <div class="eyebrow">Mental model · ${cat.name}</div>
+        <p>${cat.desc}</p>
+        ${cat.analogy ? `<div class="analogy-line">${cat.analogy}</div>` : ''}
       </div>
     </div>
+    <section class="panel graph-panel">
+      <div class="panel-head"><span>Commit graph · before and after</span><span id="stepLabel">Step 1 / 3</span></div>
+      <div class="icon-stage" id="iconStage"></div>
+      <div class="graph-caption" id="stepCaption" aria-live="polite"></div>
+      <div class="btn-row panel-controls">
+        <button class="btn" id="stepPrevBtn" type="button">← Previous state</button>
+        <button class="btn" id="stepNextBtn" type="button">Next state →</button>
+        <button class="btn primary" id="replayBtn" type="button">Replay flow</button>
+      </div>
+    </section>
     <div class="stage-grid">
-      <div class="panel">
-        <div class="panel-head"><span>Terminal</span><span>replay</span></div>
+      <section class="panel">
+        <div class="panel-head"><span>Terminal</span><span>Command replay</span></div>
         <div class="terminal-body" id="termBody"><span class="prompt">$</span> <span class="tcursor"></span></div>
-      </div>
-      <div class="panel">
-        <div class="panel-head"><span>Code example</span><span>worked session</span></div>
-        <div class="terminal-body" id="codeExample" style="min-height:auto;"></div>
-      </div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><span>Worked session</span><span>Expected output</span></div>
+        <div class="terminal-body" id="codeExample"></div>
+      </section>
     </div>
-    <div class="panel" style="margin-bottom:var(--space-10); border-color:rgba(94,234,212,0.35);">
-      <div class="panel-head" style="color:var(--accent-2);"><span>🎯 Learn by doing</span><span id="exStatus">drill in progress</span></div>
-      <div style="padding:var(--space-10) var(--space-12) 0; font-size:14px; color:var(--color-text-primary);" id="exTask"></div>
-      <div class="icon-stage" id="exStage" style="min-height:230px;"></div>
-      <div id="exMsg" style="padding:0 var(--space-12); margin-bottom:var(--space-6); min-height:1.5em; font-size:13px; color:var(--color-text-secondary); text-align:center;"></div>
-      <div style="padding:0 var(--space-12) var(--space-8); display:flex; gap:var(--space-5);">
-        <span style="font-family:var(--font-mono); color:var(--accent-2); align-self:center;">$</span>
-        <input class="search-input" id="exInput" type="text" autocomplete="off" spellcheck="false"
-          placeholder="type the command(s) that complete the task…" aria-label="Exercise command input"
-          style="font-family:var(--font-mono); flex:1;">
-        <button class="btn primary" id="exRun">Run</button>
+    <section class="panel practice-panel">
+      <div class="panel-head"><span>Hands-on repository</span><span id="exStatus" role="status">Drill in progress</span></div>
+      <div class="practice-task" id="exTask"></div>
+      <div class="icon-stage" id="exStage"></div>
+      <div class="result-message" id="exMsg" aria-live="polite"></div>
+      <div class="command-bar">
+        <span class="command-prompt" aria-hidden="true">$</span>
+        <input class="search-input command-input" id="exInput" type="text" autocomplete="off" spellcheck="false"
+          placeholder="Type the command that reaches the target state…" aria-label="Exercise command input">
+        <button class="btn primary" id="exRun" type="button">Run</button>
       </div>
-      <div class="btn-row" style="padding:0 var(--space-12) var(--space-12);">
-        <button class="btn" id="exHint">💡 Hint</button>
-        <button class="btn" id="exReset">↺ Restart drill</button>
+      <div class="btn-row practice-actions">
+        <button class="btn" id="exHint" type="button">Show hint</button>
+        <button class="btn" id="exReset" type="button">↺ Restart drill</button>
       </div>
-    </div>
-    <div class="btn-row">
-      <button class="btn" id="prevBtn" ${currentIndex<=0?'disabled':''}>← Previous command</button>
-      <button class="btn" id="nextBtn" ${currentIndex>=ALL.length-1?'disabled':''}>Next command →</button>
+    </section>
+    <div class="btn-row pager" aria-label="Command navigation">
+      <button class="btn" id="prevBtn" type="button" ${currentIndex<=0?'disabled':''}>← Previous command</button>
+      <button class="btn" id="nextBtn" type="button" ${currentIndex>=ALL.length-1?'disabled':''}>Next command →</button>
     </div>
     <div class="related-title">More in ${cat.name}</div>
     <ul class="related-list">
       ${cat.items.map((it,ii)=>{
         const rid = item.catIndex+'-'+ii;
-        return rid===id ? '' : `<li class="related-item" data-id="${rid}"><code>${it[0]}</code><span>${it[1]}</span></li>`;
+        return rid===id ? '' : `<li><button class="related-item" type="button" data-id="${rid}"><code>${it[0]}</code><span>${it[1]}</span></button></li>`;
       }).join('')}
     </ul>
   `;
@@ -1588,7 +1762,7 @@ function render(id){
   function showStep(n){
     currentStep = Math.max(0, Math.min(totalSteps-1, n));
     drawGraph(iconStage, scene[Math.min(currentStep, scene.length-1)]);
-    stepLabel.textContent = `step ${currentStep+1} / ${totalSteps}`;
+    stepLabel.textContent = `Step ${currentStep+1} / ${totalSteps}`;
     stepCaptionEl.textContent = scene[Math.min(currentStep, scene.length-1)].note || '';
     document.getElementById('stepPrevBtn').disabled = currentStep===0;
     document.getElementById('stepNextBtn').disabled = currentStep===totalSteps-1;
@@ -1635,7 +1809,7 @@ function render(id){
     let repo, done;
     function refresh(){
       drawGraph(stage, repo.toStep());
-      statusEl.textContent = done ? '✅ passed' : `HEAD → ${repo.head} @ ${repo.tip()}`;
+      statusEl.textContent = done ? 'Passed' : `HEAD → ${repo.head} @ ${repo.tip()}`;
       statusEl.style.color = done ? 'var(--accent-2)' : '';
     }
     function start(){
@@ -1653,7 +1827,7 @@ function render(id){
       if(ex.goal(repo)){
         done = true;
         repo.msg = '';
-        msgEl.innerHTML = '✅ <b>' + ex.win + '</b>';
+        msgEl.innerHTML = '<b>Passed.</b> ' + ex.win;
         msgEl.style.color = 'var(--accent-2)';
         input.disabled = true;
         confettiBurst(stage);
@@ -1668,7 +1842,7 @@ function render(id){
     document.getElementById('exRun').addEventListener('click', ()=>run(input.value));
     input.addEventListener('keydown', e=>{ if(e.key==='Enter') run(input.value); });
     document.getElementById('exHint').addEventListener('click', ()=>{
-      msgEl.innerHTML = '💡 ' + ex.hint;
+      msgEl.innerHTML = '<b>Hint:</b> ' + ex.hint;
       msgEl.style.color = 'var(--accent-warn)';
     });
     document.getElementById('exReset').addEventListener('click', start);
