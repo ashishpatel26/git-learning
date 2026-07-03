@@ -205,8 +205,8 @@ a{color:var(--accent-hover);}
 .scenario-card{border-left:3px solid var(--accent);background:var(--surface-2);}
 .cat-context .eyebrow,.scenario-card .label{margin-bottom:8px;color:var(--color-text-tertiary);font-size:10px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;}
 .scenario-card .label{color:#ff927d;}
-.cat-context p,.scenario-card p{margin:0;color:var(--color-text-secondary);font-size:14px;line-height:1.65;}
-.scenario-card p{color:var(--color-text-primary);font-size:15px;}
+.cat-context p,.scenario-card p{margin:0;color:var(--color-text-secondary);font-size:16px;line-height:1.65;}
+.scenario-card p{color:var(--color-text-primary);}
 .cat-context .analogy-line{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);color:var(--color-text-tertiary);font-size:12px;line-height:1.6;}
 .panel{overflow:hidden;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--color-surface-raised);box-shadow:var(--shadow-2);}
 .graph-panel{margin-bottom:24px;}
@@ -244,7 +244,7 @@ a{color:var(--accent-hover);}
 .btn:hover{border-color:var(--border-strong);background:var(--surface-3);transform:translateY(-1px);}
 .btn:active{transform:none;}
 .btn:disabled{opacity:.38;cursor:not-allowed;transform:none;}
-.btn.primary{border-color:var(--accent);background:var(--accent);color:#fff;}
+.btn.primary{border-color:var(--accent);background:var(--accent);color:var(--color-text-inverse);}
 .btn.primary:hover{border-color:var(--accent-hover);background:var(--accent-hover);box-shadow:0 7px 20px rgba(240,81,51,.2);}
 .pager{justify-content:space-between;margin:0 0 32px;}
 .related-title{margin:0 0 10px;color:var(--color-text-tertiary);font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;}
@@ -347,6 +347,8 @@ a{color:var(--accent-hover);}
   .sidebar-backdrop.is-animating{transition:opacity var(--motion-normal) ease;}
   .sidebar-backdrop[data-open="true"]{opacity:1;pointer-events:auto;}
   .sidebar-toggle{display:block;flex:0 0 auto;}
+  .sidebar-toggle,.search-input{height:44px;}
+  .level-tab{min-height:44px;}
   .nav-item,.nav-group summary{min-height:44px;}
   .workspace-bar{padding:0 12px;}
   .repo-path{margin-right:auto;}
