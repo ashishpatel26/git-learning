@@ -351,9 +351,11 @@ statsRow.innerHTML = `<span><b>${ALL.length}</b> commands</span><span>·</span><
 
 /* build sidebar */
 const pgLi = document.createElement('li');
-pgLi.innerHTML = `<button class="nav-item" id="pgNavBtn" style="font-family:var(--font-primary); font-weight:700; font-size:13px; color:var(--accent-2); padding:var(--space-6) var(--space-3); margin-bottom:var(--space-5);">⚡ Playground — type commands live</button>`;
+pgLi.innerHTML = `<button class="nav-item" id="pgNavBtn" style="font-family:var(--font-primary); font-weight:700; font-size:13px; color:var(--accent-2); padding:var(--space-6) var(--space-3);">⚡ Playground — type commands live</button>
+<button class="nav-item" id="arenaNavBtn" style="font-family:var(--font-primary); font-weight:700; font-size:13px; color:var(--accent-warn); padding:var(--space-6) var(--space-3); margin-bottom:var(--space-5);">🎯 Practice Arena — 100+ scenarios</button>`;
 navGroups.appendChild(pgLi);
 pgLi.querySelector('#pgNavBtn').addEventListener('click', ()=>{ renderPlayground(); window.scrollTo(0,0); });
+pgLi.querySelector('#arenaNavBtn').addEventListener('click', ()=>{ renderArena(); window.scrollTo(0,0); });
 
 CATEGORIES.forEach((cat, ci)=>{
   const li = document.createElement('li');
@@ -1040,6 +1042,291 @@ function getExercise(cmd){
   return { key, ex: EXERCISES[key] };
 }
 
+/* ============================================================
+   PRACTICE ARENA — 100+ generated scenario drills
+   ============================================================ */
+function buildArena(){
+  const E = [];
+  const add = (level, title, story, setup, goal, hint, win) =>
+    E.push({ id: E.length, level, title, story, setup, goal, hint, win });
+  const B='Beginner', I='Intermediate', A='Advanced';
+  const twoParents = (r,br='main') => (r.commits[r.branches[br]]?.parents || []).length === 2;
+  const onePar = (r,br='main') => (r.commits[r.branches[br]]?.parents || []).length < 2;
+
+  /* --- commit reps (5) --- */
+  [['first day at a startup — save your initial work',1],
+   ['the README and the config file each deserve their own snapshot',2],
+   ['three separate bug fixes, three separate save points',3],
+   ['a productive morning: four features, four commits',4],
+   ['end-to-end prototype built — checkpoint all five stages',5]
+  ].forEach(([story,n])=>add(B, `Make ${n} commit${n>1?'s':''} on main`, `Scenario: ${story}.`,
+    [], r=>r.seq>=n && r.head==='main', `Run <code>git commit</code> ${n} time${n>1?'s':''}.`, `${n} snapshot${n>1?'s':''} saved — each one a permanent save point.`));
+
+  /* --- branch creation (8) --- */
+  const branchStories = {
+    feature:'a new search feature was approved', bugfix:'QA found a nasty off-by-one', hotfix:'production is down',
+    release:'v2 ships next week and needs isolation', experiment:'you want to try a risky refactor safely',
+    docs:'the API docs need a rewrite', payments:'the payments integration starts today', login:'the login flow gets a redesign',
+    search:'search results ranking needs an overhaul', api:'the public API gets versioned endpoints'};
+  Object.entries(branchStories).forEach(([b,story])=>add(B, `Create a branch named ${b}`, `Scenario: ${story} — main must stay untouched.`,
+    ['git commit','git commit'], r=>!!r.branches[b], `<code>git branch ${b}</code>`, `Branch '${b}' now labels the same commit as main — zero cost until you commit on it.`));
+
+  /* --- create + switch (8) --- */
+  Object.entries(branchStories).forEach(([b,story])=>add(B, `Create AND switch to ${b} in one move`, `Scenario: ${story} — and you want to start working on it immediately.`,
+    ['git commit'], r=>r.head===b, `<code>git switch -c ${b}</code> (one command).`, `-c created the branch and moved HEAD onto it in a single step.`));
+
+  /* --- commit on a branch (8) --- */
+  Object.keys(branchStories).forEach((b,i)=>{
+    const n = (i%3)+1;
+    add(B, `Do ${n} commit${n>1?'s':''} of work on ${b}`, `Scenario: the ${b} work is underway — commit progress there while main stays frozen.`,
+      ['git commit'], r=>r.head===b && r.branches[b] && r.branches[b]!==r.branches.main && r.seq>=n+1,
+      `<code>git switch -c ${b}</code>, then <code>git commit</code> ×${n}.`, `${b} diverged from main by ${n} commit${n>1?'s':''}.`);
+  });
+
+  /* --- switch back and forth (4) --- */
+  [['feature','you forgot a config change on main'],['hotfix','mid-hotfix you need to check something on main'],
+   ['release','swap over to main to review'],['experiment','abandon the experiment view for a moment']
+  ].forEach(([b,story])=>add(B, `Work on ${b}, then return to main`, `Scenario: ${story}.`,
+    ['git commit',`git branch ${b}`,`git switch ${b}`,'git commit'], r=>r.head==='main',
+    `<code>git switch main</code>`, `HEAD is a movable "you are here" marker — switching is instant.`));
+
+  /* --- fast-forward merges (8) --- */
+  Object.keys(branchStories).forEach((b,i)=>{
+    const ahead = (i%3)+1;
+    add(I, `Fast-forward merge ${b} into main`, `Scenario: ${b} is ${ahead} commit${ahead>1?'s':''} ahead and main hasn't moved — git won't even need a merge commit.`,
+      ['git commit',`git switch -c ${b}`,...Array(ahead).fill('git commit'),'git switch main'],
+      r=>r.branches.main===r.branches[b] && onePar(r), `<code>git merge ${b}</code> — watch main's label just slide forward.`,
+      `Fast-forward: no merge commit, main simply caught up.`);
+  });
+
+  /* --- 3-way merges (8) --- */
+  Object.keys(branchStories).forEach((b,i)=>{
+    const bn=(i%2)+1, mn=(i%2)+1;
+    add(I, `Three-way merge: ${b} into main`, `Scenario: both ${b} AND main moved since the fork — a real merge commit is required.`,
+      ['git commit',`git branch ${b}`,`git switch ${b}`,...Array(bn).fill('git commit'),'git switch main',...Array(mn).fill('git commit')],
+      r=>twoParents(r), `You're on main — <code>git merge ${b}</code>.`,
+      `Two-parent merge commit created — both timelines preserved.`);
+  });
+
+  /* --- merge main INTO feature (4) --- */
+  ['feature','payments','login','experiment'].forEach(b=>add(I, `Sync ${b} with main (merge main in)`, `Scenario: main got important fixes while you worked on ${b} — pull them INTO your branch.`,
+    ['git commit',`git branch ${b}`,`git switch ${b}`,'git commit','git switch main','git commit',`git switch ${b}`],
+    r=>r.head===b && twoParents(r,b), `You're on ${b} — <code>git merge main</code>.`,
+    `${b} now contains main's fixes — direction matters: you merged INTO ${b}.`));
+
+  /* --- rebase (8) --- */
+  Object.keys(branchStories).forEach((b,i)=>{
+    const n=(i%2)+1;
+    add(A, `Rebase ${b} onto main`, `Scenario: main moved on while you made ${n} commit${n>1?'s':''} on ${b} — replay your work for a straight-line history.`,
+      ['git commit',`git branch ${b}`,`git switch ${b}`,...Array(n).fill('git commit'),'git switch main','git commit',`git switch ${b}`],
+      r=>String(r.branches[b]).includes("'") && r.isAncestor(r.branches.main, r.branches[b]),
+      `You're on ${b} — <code>git rebase main</code>. Watch the NEW commit ids.`,
+      `Replayed with new ids — history reads as one straight line now.`);
+  });
+
+  /* --- rebase then fast-forward (4) --- */
+  ['feature','bugfix','payments','docs'].forEach(b=>add(A, `Rebase ${b}, then fast-forward main`, `Scenario: the gold-standard clean flow — rebase your branch, then main merges it with zero merge commits.`,
+    ['git commit',`git branch ${b}`,`git switch ${b}`,'git commit','git switch main','git commit',`git switch ${b}`],
+    r=>r.branches.main===r.branches[b] && String(r.branches.main).includes("'"),
+    `<code>git rebase main</code> → <code>git switch main</code> → <code>git merge ${b}</code>.`,
+    `Linear history, no merge bubble — the trunk-based dream.`));
+
+  /* --- reset (6) --- */
+  [[1,'the last commit broke the build'],[2,'the last two commits were a dead end'],[3,'the whole afternoon was a wrong turn'],
+   [1,'you committed a debug print by mistake'],[2,'both "wip" commits need to go'],[1,'that commit belongs on a branch, not main']
+  ].forEach(([n,story],i)=>{
+    const total=n+1+(i%2);
+    add(I, `Throw away the last ${n} commit${n>1?'s':''}`, `Scenario: ${story} — main must point at c${total-n}.`,
+      Array(total).fill('git commit'), r=>r.branches.main===('c'+(total-n)),
+      `<code>git reset --hard HEAD~${n}</code>`, `Label rewound — the orphaned commit${n>1?'s':''} faded away.`);
+  });
+
+  /* --- revert (5) --- */
+  [['the bad commit is already on the shared server'],['teammates pulled it an hour ago'],['CI already deployed it'],
+   ['you must keep the audit trail intact'],['company policy: never rewrite pushed history']
+  ].forEach(story=>add(I, 'Undo the last commit — WITHOUT rewriting history', `Scenario: ${story} — reset is forbidden.`,
+    ['git commit','git commit'], r=>String(r.commits[r.branches.main]?.hashLabel||'').startsWith('!'),
+    `<code>git revert HEAD</code> — adds an anti-commit.`, `Effect cancelled, history intact — the safe undo for shared branches.`));
+
+  /* --- cherry-pick (6) --- */
+  [['feature','c2','the fix on feature is needed on main NOW'],['bugfix','c2','one commit from bugfix must ship today'],
+   ['hotfix','c2','grab the hotfix commit without its branch'],['payments','c2','the validation fix applies to main too'],
+   ['experiment','c2','one good idea came out of the experiment'],['login','c2','the session fix is branch-independent']
+  ].forEach(([b,pick,story])=>add(A, `Cherry-pick ${pick} from ${b}`, `Scenario: ${story} — you don't want the whole branch, just that commit.`,
+    ['git commit',`git branch ${b}`,`git switch ${b}`,'git commit','git switch main'],
+    r=>r.commits[pick+"'"] && r.isAncestor(pick+"'", r.branches.main),
+    `You're on main — <code>git cherry-pick ${pick}</code>.`, `Copied across as ${pick}' — the original stayed on ${b}.`));
+
+  /* --- tags (6) --- */
+  ['v1.0','v1.1','v2.0','v2.1.3','v3.0-beta','v1.0.1'].forEach((v,i)=>add(B, `Tag the release as ${v}`, `Scenario: ${i%2?'the release manager needs a permanent marker':'ship it — mark this exact commit forever'}.`,
+    Array((i%3)+1).fill('git commit'), r=>!!r.tags[v],
+    `<code>git tag ${v}</code>`, `${v} pinned — branches move, tags never do.`));
+
+  /* --- combo flows (12) --- */
+  add(A,'The hotfix flow, end to end','Scenario: production broke. Branch off, fix it, merge it back — the full emergency loop.',
+    ['git commit','git commit'], r=>r.branches.hotfix && r.branches.main===r.branches.hotfix,
+    `<code>git switch -c hotfix</code> → <code>git commit</code> → <code>git switch main</code> → <code>git merge hotfix</code>.`,
+    'The complete hotfix loop: isolate, fix, integrate.');
+  add(A,'Release: merge + tag','Scenario: feature is done and reviewed — integrate it into main and stamp the release.',
+    ['git commit','git branch feature','git switch feature','git commit','git switch main','git commit'],
+    r=>twoParents(r) && Object.keys(r.tags).length>0,
+    `<code>git merge feature</code>, then <code>git tag v1.0</code>.`, 'Merged and tagged — a complete release.');
+  add(A,'Two features, two merges','Scenario: two teammates finished simultaneously — integrate both branches into main.',
+    ['git commit','git branch alpha','git switch alpha','git commit','git switch main','git branch beta','git switch beta','git commit','git switch main','git commit'],
+    r=>{const m=r.branches.main; const p1=(r.commits[m]?.parents||[]); if(p1.length!==2) return false; return r.isAncestor(r.branches.alpha,m)&&r.isAncestor(r.branches.beta,m);},
+    `<code>git merge alpha</code> then <code>git merge beta</code> (each may need its own merge commit).`,
+    'Both timelines integrated — main contains everything.');
+  add(A,'Wrong branch! Move the commit','Scenario: you committed on main but it belongs on feature — copy it over, then erase it from main.',
+    ['git commit','git branch feature','git commit'],
+    r=>r.commits["c2'"] && r.isAncestor("c2'", r.branches.feature) && r.branches.main==='c1',
+    `<code>git switch feature</code> → <code>git cherry-pick c2</code> → <code>git switch main</code> → <code>git reset --hard HEAD~1</code>.`,
+    'Commit relocated — classic recovery move.');
+  add(A,'Undo, redo better','Scenario: last commit was wrong. Remove it, then commit a corrected version.',
+    ['git commit','git commit'], r=>r.branches.main!=='c2' && !String(r.branches.main).includes("'") && r.seq>=3 && r.branches.main==='c3' && r.commits.c3.parents[0]==='c1',
+    `<code>git reset --hard HEAD~1</code> then <code>git commit</code>.`, 'Old attempt gone, better one in its place.');
+  add(A,'Stack two branches','Scenario: build feature-b on top of feature-a (a stacked PR).',
+    ['git commit'], r=>r.branches['feature-a'] && r.branches['feature-b'] && r.isAncestor(r.branches['feature-a'], r.branches['feature-b']) && r.branches['feature-b']!==r.branches['feature-a'],
+    `<code>git switch -c feature-a</code> → commit → <code>git switch -c feature-b</code> → commit.`,
+    'feature-b contains feature-a — a stacked branch.');
+  add(A,'Merge, then keep working','Scenario: merge feature into main, then continue with one more commit on main.',
+    ['git commit','git branch feature','git switch feature','git commit','git switch main','git commit'],
+    r=>{let id=r.branches.main; const c=r.commits[id]; if(!c||c.parents.length!==1) return false; return (r.commits[c.parents[0]]?.parents||[]).length===2;},
+    `<code>git merge feature</code> then <code>git commit</code>.`, 'Life continues after the merge.');
+  add(A,'Tag before AND after','Scenario: tag v1.0 now, commit a fix, tag v1.0.1 — two markers, two commits.',
+    ['git commit'], r=>r.tags['v1.0'] && r.tags['v1.0.1'] && r.tags['v1.0']!==r.tags['v1.0.1'],
+    `<code>git tag v1.0</code> → <code>git commit</code> → <code>git tag v1.0.1</code>.`, 'Two frozen release markers on different commits.');
+  add(A,'Rescue with revert ×2','Scenario: the last TWO commits are both bad and both pushed — cancel each without rewriting.',
+    ['git commit','git commit','git commit'],
+    r=>{let id=r.branches.main,count=0; while(id && String(r.commits[id]?.hashLabel||'').startsWith('!')){count++; id=r.commits[id].parents[0];} return count>=2;},
+    `<code>git revert HEAD</code> twice.`, 'Two anti-commits — audit trail fully intact.');
+  add(A,'Fork, diverge, reconcile','Scenario: the full lifecycle — branch, both sides commit, merge back together.',
+    ['git commit'], r=>twoParents(r) && Object.keys(r.branches).length>=2,
+    `<code>git switch -c topic</code> → commit → <code>git switch main</code> → commit → <code>git merge topic</code>.`,
+    'You just ran the entire collaborative loop solo.');
+  add(A,'Triple branch juggle','Scenario: create three branches (a, b, c) all pointing at today\'s tip — planning tomorrow\'s work.',
+    ['git commit','git commit'], r=>r.branches.a && r.branches.b && r.branches.c,
+    `<code>git branch a</code>, <code>git branch b</code>, <code>git branch c</code>.`,
+    'Three zero-cost labels — branches are cheap, use them freely.');
+  add(A,'The long game','Scenario: build a history of at least 8 commits across main and one feature branch, merged at the end.',
+    [], r=>r.seq>=8 && twoParents(r),
+    `Commit several times, branch, commit more, merge back. Any path works — reach 8 commits + a merge.`,
+    'A realistic week of history, built by hand.');
+
+  return E;
+}
+const ARENA = buildArena();
+const ARENA_KEY = 'git-arena-done';
+const arenaDone = ()=> JSON.parse(localStorage.getItem(ARENA_KEY) || '{}');
+
+function renderArena(){
+  document.onkeydown = null;
+  document.querySelectorAll('.nav-item').forEach(b=>b.removeAttribute('aria-current'));
+  const abtn = document.getElementById('arenaNavBtn');
+  if(abtn) abtn.setAttribute('aria-current','true');
+  const done = arenaDone();
+  const doneCount = ARENA.filter(e=>done[e.id]).length;
+  const levels = ['Beginner','Intermediate','Advanced'];
+  contentEl.innerHTML = `
+    <div class="crumb"><span>🎯 Practice Arena</span><span class="sep">/</span><span class="cur">${ARENA.length} scenario drills</span></div>
+    <h1 class="cmd-title">Practice Arena — ${ARENA.length} scenarios</h1>
+    <div class="cat-context" style="margin-bottom:var(--space-10);">
+      <div class="eyebrow">progress</div>
+      <p><b>${doneCount} / ${ARENA.length}</b> completed. Each drill drops you into a prepared repo with a story — type the commands that reach the goal. Progress saves in your browser.</p>
+      <div style="height:8px; border-radius:999px; background:rgba(255,255,255,0.06); overflow:hidden;">
+        <div style="height:100%; width:${Math.round(doneCount/ARENA.length*100)}%; background:linear-gradient(90deg,var(--accent),var(--accent-2)); transition:width .4s ease;"></div>
+      </div>
+    </div>
+    ${levels.map(lv=>`
+      <div class="related-title" style="margin-top:var(--space-12);">${lv} — ${ARENA.filter(e=>e.level===lv).length} drills</div>
+      <ul class="related-list" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr));">
+        ${ARENA.filter(e=>e.level===lv).map(e=>`
+          <li class="related-item" data-drill="${e.id}" style="${done[e.id]?'border-color:rgba(94,234,212,0.5);':''}">
+            <code>${done[e.id]?'✅ ':''}#${e.id+1} · ${e.title}</code>
+            <span>${e.story.replace('Scenario: ','')}</span>
+          </li>`).join('')}
+      </ul>`).join('')}
+  `;
+  contentEl.querySelectorAll('[data-drill]').forEach(el=>{
+    el.addEventListener('click', ()=>{ renderDrill(parseInt(el.dataset.drill,10)); window.scrollTo(0,0); });
+  });
+  history.replaceState(null, '', '#arena');
+}
+
+function renderDrill(idx){
+  const ex = ARENA[idx];
+  if(!ex){ renderArena(); return; }
+  document.onkeydown = null;
+  contentEl.innerHTML = `
+    <div class="crumb"><span style="cursor:pointer" id="backToArena">🎯 Practice Arena</span><span class="sep">/</span><span class="cur">drill #${idx+1} · ${ex.level}</span></div>
+    <h1 class="cmd-title">#${idx+1} — ${ex.title}</h1>
+    <div class="scenario-card">
+      <div class="label">Scenario</div>
+      <p>${ex.story}</p>
+    </div>
+    <div class="panel" style="margin-bottom:var(--space-10); border-color:rgba(94,234,212,0.35);">
+      <div class="panel-head" style="color:var(--accent-2);"><span>🎯 Reach the goal</span><span id="exStatus">in progress</span></div>
+      <div class="icon-stage" id="exStage" style="min-height:230px;"></div>
+      <div id="exMsg" style="padding:0 var(--space-12); margin-bottom:var(--space-6); min-height:1.5em; font-size:13px; color:var(--color-text-secondary); text-align:center;"></div>
+      <div style="padding:0 var(--space-12) var(--space-8); display:flex; gap:var(--space-5);">
+        <span style="font-family:var(--font-mono); color:var(--accent-2); align-self:center;">$</span>
+        <input class="search-input" id="exInput" type="text" autocomplete="off" spellcheck="false"
+          placeholder="type git commands to reach the goal…" aria-label="Drill command input" style="font-family:var(--font-mono); flex:1;">
+        <button class="btn primary" id="exRun">Run</button>
+      </div>
+      <div class="btn-row" style="padding:0 var(--space-12) var(--space-12);">
+        <button class="btn" id="exHint">💡 Hint</button>
+        <button class="btn" id="exReset">↺ Restart</button>
+        <button class="btn" id="exNext">Next drill →</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('backToArena').addEventListener('click', renderArena);
+  document.getElementById('exNext').addEventListener('click', ()=>{ renderDrill((idx+1)%ARENA.length); window.scrollTo(0,0); });
+  const stage = document.getElementById('exStage');
+  const msgEl = document.getElementById('exMsg');
+  const statusEl = document.getElementById('exStatus');
+  const input = document.getElementById('exInput');
+  let repo, solved;
+  function refresh(){
+    drawGraph(stage, repo.toStep());
+    statusEl.textContent = solved ? '✅ passed' : `HEAD → ${repo.head} @ ${repo.tip()}`;
+    statusEl.style.color = solved ? 'var(--accent-2)' : '';
+  }
+  function start(){
+    repo = newRepo(ex.setup); solved = false;
+    msgEl.textContent = 'Repo prepared. Reach the goal.';
+    msgEl.style.color = 'var(--color-text-tertiary)';
+    input.disabled = false;
+    refresh();
+    input.focus();
+  }
+  function run(cmd){
+    if(!cmd.trim() || solved) return;
+    repo.exec(cmd);
+    if(ex.goal(repo)){
+      solved = true;
+      msgEl.innerHTML = '✅ <b>' + ex.win + '</b>';
+      msgEl.style.color = 'var(--accent-2)';
+      input.disabled = true;
+      confettiBurst(stage);
+      const d = arenaDone(); d[ex.id] = true;
+      localStorage.setItem(ARENA_KEY, JSON.stringify(d));
+    } else {
+      msgEl.textContent = repo.msg || '…';
+      msgEl.style.color = repo.ok ? 'var(--color-text-secondary)' : 'var(--accent-danger)';
+    }
+    refresh();
+    input.value = '';
+    if(!solved) input.focus();
+  }
+  document.getElementById('exRun').addEventListener('click', ()=>run(input.value));
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter') run(input.value); });
+  document.getElementById('exHint').addEventListener('click', ()=>{ msgEl.innerHTML = '💡 ' + ex.hint; msgEl.style.color = 'var(--accent-warn)'; });
+  document.getElementById('exReset').addEventListener('click', start);
+  start();
+  history.replaceState(null, '', '#arena-'+idx);
+}
+
 function renderPlayground(){
   document.onkeydown = null; /* drop command-page arrow-key handler */
   document.querySelectorAll('.nav-item').forEach(b=>b.removeAttribute('aria-current'));
@@ -1400,9 +1687,11 @@ function render(id){
   history.replaceState(null, '', '#'+id);
 }
 
-/* initial render: from hash, playground, or first command */
+/* initial render: from hash, playground, arena, or first command */
 const initId = (location.hash||'').replace('#','') || ALL[0].id;
 if(initId === 'playground') renderPlayground();
+else if(initId === 'arena') renderArena();
+else if(initId.startsWith('arena-')) renderDrill(parseInt(initId.slice(6),10) || 0);
 else if(ALL.find(x=>x.id===initId)) render(initId);
 else render(ALL[0].id);
 </script>
